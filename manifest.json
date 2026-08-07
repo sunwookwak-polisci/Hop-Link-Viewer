@@ -1,0 +1,10 @@
+{
+	"id": "hop-link-viewer",
+	"name": "Hop-Link Viewer",
+	"version": "1.0.0",
+	"minAppVersion": "1.5.0",
+	"description": "Suggest wiki-linked notes up to N hops from an anchor note, excluding direct links by default.",
+	"author": "Hop-Link Viewer",
+	"authorUrl": "https://github.com/Deterministic-Works/Hop-Link-Viewer",
+	"isDesktopOnly": false
+}
