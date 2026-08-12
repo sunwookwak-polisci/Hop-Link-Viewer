@@ -137,7 +137,7 @@ export class HopLinkViewerView extends ItemView {
 		}
 
 		const anchorSection = container.createDiv({ cls: "hop-link-viewer-anchor" });
-		anchorSection.createEl("span", { text: "Anchor: " });
+		anchorSection.createSpan({ text: "Anchor: " });
 
 		const anchorLink = anchorSection.createEl("a", {
 			cls: "internal-link",
@@ -147,7 +147,7 @@ export class HopLinkViewerView extends ItemView {
 		anchorLink.dataset.href = anchor.path;
 
 		const mtime = moment(anchor.stat.mtime);
-		anchorSection.createEl("span", {
+		anchorSection.createSpan({
 			cls: "hop-link-viewer-mtime",
 			text: ` · modified ${mtime.format("YYYY-MM-DD HH:mm")}`,
 		});

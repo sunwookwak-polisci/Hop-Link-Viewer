@@ -101,11 +101,11 @@ It is built for **serendipity on demand**: an always-ready sidebar that nudges y
 2. Open **Settings → BRAT** → **Add Beta plugin**.
 3. Enter the repository:
    ```
-   Deterministic-Works/Hop-Link-Viewer
+   sunwookwak-polisci/Hop-Link-Viewer
    ```
 4. Enable **Hop-Link Viewer** under Community plugins.
 
-BRAT installs from the [GitHub release](https://github.com/Deterministic-Works/Hop-Link-Viewer/releases) (`main.js`, `manifest.json`, `styles.css`). Use **Check for updates** in BRAT to pull new versions.
+BRAT installs from the [GitHub release](https://github.com/sunwookwak-polisci/Hop-Link-Viewer/releases) (`main.js`, `manifest.json`, `styles.css`). Use **Check for updates** in BRAT to pull new versions.
 
 ## Install (manual)
 

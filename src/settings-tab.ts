@@ -16,7 +16,7 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Hop depth")
-			.setDesc("Maximum hop distance from the anchor. Shows non-direct notes from hop 2 up to this depth (hop 1 only with Include direct links).")
+			.setDesc("Maximum hop distance from the anchor. Shows non-direct notes from hop 2 up to this depth; hop 1 appears only when direct links are included.")
 			.addText((text) =>
 				text
 					.setPlaceholder("3")
@@ -118,7 +118,7 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Auto-open sidebar on startup")
-			.setDesc("Open the Hop-Link Viewer sidebar when Obsidian starts.")
+			.setDesc("Open this sidebar when Obsidian starts.")
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.autoOpenSidebar)

@@ -1,6 +1,6 @@
 {
 	"name": "hop-link-viewer",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "Obsidian plugin for N-hop missing link discovery",
 	"main": "main.js",
 	"scripts": {

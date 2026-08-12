@@ -71,7 +71,8 @@ export default class HopLinkViewerPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const savedSettings = (await this.loadData()) as Partial<HopLinkViewerSettings> | null;
+		this.settings = { ...DEFAULT_SETTINGS, ...(savedSettings ?? {}) };
 	}
 
 	async saveSettings(): Promise<void> {
@@ -114,7 +115,7 @@ export default class HopLinkViewerPlugin extends Plugin {
 		}
 
 		if (leaf) {
-			workspace.revealLeaf(leaf);
+			await workspace.revealLeaf(leaf);
 		}
 	}
 }
