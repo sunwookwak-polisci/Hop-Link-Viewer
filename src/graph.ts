@@ -1,8 +1,15 @@
-import { TFile, type App } from "obsidian";
+import { normalizePath, TFile, type App } from "obsidian";
 import type { HopLinkViewerSettings, LinkSuggestion, SortOrder } from "./constants";
 
 export function isExcludedPath(path: string, excludedPaths: string[]): boolean {
-	return excludedPaths.some((prefix) => path.startsWith(prefix));
+	const normalizedPath = normalizePath(path);
+	return excludedPaths.some((excludedPath) => {
+		const normalizedExcludedPath = normalizePath(excludedPath.trim());
+		return normalizedExcludedPath.length > 0 && (
+			normalizedPath === normalizedExcludedPath ||
+			normalizedPath.startsWith(`${normalizedExcludedPath}/`)
+		);
+	});
 }
 
 export function isValidTargetFile(path: string): boolean {

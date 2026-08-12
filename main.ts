@@ -13,14 +13,14 @@ export default class HopLinkViewerPlugin extends Plugin {
 		this.registerView(VIEW_TYPE_HOP_LINK_VIEWER, (leaf) => new HopLinkViewerView(leaf, this));
 
 		this.addRibbonIcon("git-branch", "Open Hop-Link Viewer", () => {
-			this.activateView();
+			void this.activateView();
 		});
 
 		this.addCommand({
-			id: "open-hop-link-viewer",
-			name: "Open Hop-Link Viewer",
+			id: "open-view",
+			name: "Open viewer",
 			callback: () => {
-				this.activateView();
+				void this.activateView();
 			},
 		});
 
@@ -58,13 +58,16 @@ export default class HopLinkViewerPlugin extends Plugin {
 
 		if (this.settings.autoOpenSidebar) {
 			this.app.workspace.onLayoutReady(() => {
-				this.activateView();
+				void this.activateView();
 			});
 		}
 	}
 
 	onunload(): void {
-		this.app.workspace.detachLeavesOfType(VIEW_TYPE_HOP_LINK_VIEWER);
+		if (this.refreshTimeout !== null) {
+			window.clearTimeout(this.refreshTimeout);
+			this.refreshTimeout = null;
+		}
 	}
 
 	async loadSettings(): Promise<void> {

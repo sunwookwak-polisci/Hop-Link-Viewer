@@ -80,7 +80,7 @@ Supported suggestion types: markdown notes, extensionless note paths, and PDFs l
 - **Graph hygiene** — periodically discover "obvious in hindsight" links between clusters of notes
 - **Exploration without search** — shuffle sort order or raise hop depth when you want a random walk through nearby ideas instead of keyword lookup
 
-No Dataview, no query language, no template setup. Enable the plugin, open the sidebar (ribbon icon or command palette → **Open Hop-Link Viewer**), and work as usual.
+No Dataview, no query language, no template setup. Enable the plugin, open the sidebar (ribbon icon or command palette → **Hop-Link Viewer: Open viewer**), and work as usual.
 
 ## Why use it
 
@@ -122,7 +122,7 @@ BRAT installs from the [GitHub release](https://github.com/Deterministic-Works/H
 
 ## Usage
 
-- Click the **git-branch** ribbon icon, or run **Open Hop-Link Viewer** from the command palette.
+- Click the **git-branch** ribbon icon, or run **Hop-Link Viewer: Open viewer** from the command palette.
 - The sidebar shows an anchor note and suggested links from hop 2 up to N (non-direct by default).
 - Suggestions exclude the anchor, its direct neighbors, and paths under configured excluded folders.
 

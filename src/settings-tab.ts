@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, normalizePath, PluginSettingTab, Setting } from "obsidian";
 import type HopLinkViewerPlugin from "../main";
 import type { AnchorMode, SortOrder } from "./constants";
 
@@ -13,8 +13,6 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-
-		containerEl.createEl("h2", { text: "Hop-Link Viewer" });
 
 		new Setting(containerEl)
 			.setName("Hop depth")
@@ -61,7 +59,8 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 						this.plugin.settings.excludedPaths = value
 							.split("\n")
 							.map((line) => line.trim())
-							.filter((line) => line.length > 0);
+							.filter((line) => line.length > 0)
+							.map((line) => normalizePath(line));
 						await this.plugin.saveSettings();
 						this.plugin.refreshViews();
 					});
