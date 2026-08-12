@@ -18,35 +18,6 @@ Say your anchor is **Project Alpha**. It links directly to **Jane Smith** and **
 | **2-hop** | Notes linked from Jane or Budget, but not from Project Alpha — e.g. **Conference talk**, **Prior grant** | Yes |
 | **3-hop** | Notes one step further out — e.g. a paper cited on Conference talk | Yes (up to your hop depth setting) |
 
-```mermaid
-flowchart LR
-  PA(["Project Alpha<br/>anchor"])
-
-  JS["Jane Smith<br/>1-hop"]
-  B["Budget 2024<br/>1-hop"]
-
-  CT["Conference talk<br/>2-hop"]
-  PG["Prior grant<br/>2-hop"]
-
-  SP["Smith 2023 paper<br/>3-hop"]
-
-  PA --- JS
-  PA --- B
-  JS --- CT
-  B --- PG
-  CT --- SP
-
-  classDef anchor fill:#2563eb,color:#fff,stroke:#1e40af
-  classDef direct fill:#f1f5f9,stroke:#94a3b8
-  classDef suggest fill:#dcfce7,stroke:#16a34a
-
-  class PA anchor
-  class JS,B direct
-  class CT,PG,SP suggest
-```
-
-**Legend:** blue = anchor · gray = already linked to anchor (hidden by default) · green = missing-link suggestions in the sidebar (hop 2+)
-
 Each suggestion in the sidebar is clickable. Notes show a small **hop number** (2, 3, …) so you can tell how far they sit from the anchor. Turn on **Include direct links** if you also want 1-hop neighbors listed — those appear with a **linked** badge instead.
 
 ### What you see in the sidebar
