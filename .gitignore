@@ -10,8 +10,6 @@ CLAUDE.md
 .agents/
 .codex/
 .cursor/
-docs/task-handoff.md
-docs/cross-agent-workflow.md
-docs/internal/
+docs/
 .internal/
 ROADMAP.md
