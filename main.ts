@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf } from "obsidian";
+import { Plugin, TFile, WorkspaceLeaf } from "obsidian";
 import { DEFAULT_SETTINGS, VIEW_TYPE_HOP_LINK_VIEWER, type HopLinkViewerSettings } from "./src/constants";
 import { HopLinkViewerView } from "./src/view";
 import { HopLinkViewerSettingTab } from "./src/settings-tab";
@@ -57,8 +57,14 @@ function parseSettings(value: unknown): HopLinkViewerSettings {
 	return settings;
 }
 
+function parseLastEditedPath(value: unknown): string | null {
+	if (!isRecord(value) || typeof value.lastEditedPath !== "string") return null;
+	return value.lastEditedPath;
+}
+
 export default class HopLinkViewerPlugin extends Plugin {
 	settings: HopLinkViewerSettings = DEFAULT_SETTINGS;
+	lastEditedPath: string | null = null;
 	private refreshTimeout: number | null = null;
 
 	async onload(): Promise<void> {
@@ -93,8 +99,29 @@ export default class HopLinkViewerPlugin extends Plugin {
 		);
 
 		this.registerEvent(
-			this.app.vault.on("modify", () => {
+			this.app.vault.on("modify", (file) => {
+				if (file instanceof TFile && file.extension === "md") {
+					void this.setLastEditedPath(file.path);
+				}
 				this.scheduleRefresh();
+			})
+		);
+
+		this.registerEvent(
+			this.app.vault.on("rename", (file, oldPath) => {
+				if (oldPath === this.lastEditedPath) {
+					void this.setLastEditedPath(
+						file instanceof TFile && file.extension === "md" ? file.path : null
+					);
+				}
+			})
+		);
+
+		this.registerEvent(
+			this.app.vault.on("delete", (file) => {
+				if (file.path === this.lastEditedPath) {
+					void this.setLastEditedPath(null);
+				}
 			})
 		);
 
@@ -127,10 +154,24 @@ export default class HopLinkViewerPlugin extends Plugin {
 	async loadSettings(): Promise<void> {
 		const savedSettings: unknown = await this.loadData();
 		this.settings = parseSettings(savedSettings);
+		this.lastEditedPath = parseLastEditedPath(savedSettings);
 	}
 
 	async saveSettings(): Promise<void> {
-		await this.saveData(this.settings);
+		await this.savePluginData();
+	}
+
+	private async setLastEditedPath(path: string | null): Promise<void> {
+		if (path === this.lastEditedPath) return;
+		this.lastEditedPath = path;
+		await this.savePluginData();
+	}
+
+	private async savePluginData(): Promise<void> {
+		await this.saveData({
+			...this.settings,
+			lastEditedPath: this.lastEditedPath,
+		});
 	}
 
 	scheduleRefresh(): void {

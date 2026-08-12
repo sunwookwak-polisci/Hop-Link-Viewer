@@ -1,7 +1,7 @@
 {
 	"id": "hop-link-viewer",
 	"name": "Hop-Link Viewer",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"minAppVersion": "1.13.0",
 	"description": "Suggest wiki-linked notes up to N hops from an anchor note, excluding direct links by default.",
 	"author": "Sunwoo Kwak",

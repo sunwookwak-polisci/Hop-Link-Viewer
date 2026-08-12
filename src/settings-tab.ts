@@ -67,7 +67,7 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 					key: "anchorMode",
 					options: {
 						"active-file": "Active file (focused pane)",
-						"last-edited": "Last edited (most recently modified)",
+						"last-edited": "Last edited (tracked by this plugin)",
 						"last-viewed": "Last viewed (active or recently opened)",
 					},
 				},

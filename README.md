@@ -62,7 +62,7 @@ The sidebar **updates on its own** when you switch notes, open files, save edits
 The anchor is whatever note the plugin treats as "you are here." In **Settings → Hop-Link Viewer** you pick:
 
 - **Active file** (default) — the note in your focused editor pane
-- **Last edited** — the markdown file you most recently saved
+- **Last edited** — the markdown file you most recently saved while the plugin was enabled
 - **Last viewed** — active file when possible; otherwise your most recently opened note
 
 That makes the sidebar follow your workflow: stay on the current note while writing, or drift toward whatever you touched last across the vault.
@@ -147,7 +147,7 @@ The sidebar refreshes automatically when you switch notes, open files, save chan
 | Mode | Behavior |
 |------|----------|
 | `active-file` | The note in the focused pane |
-| `last-edited` | Most recently modified markdown file (by `mtime`), excluding configured paths |
+| `last-edited` | Most recently saved markdown file tracked by the plugin; before the first tracked edit, falls back to the active or most recently opened note |
 | `last-viewed` | Active file if valid; otherwise the first valid entry in recently opened files |
 
 ## How it works

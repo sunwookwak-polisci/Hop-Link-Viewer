@@ -1,8 +1,18 @@
-import { ItemView, TFile, WorkspaceLeaf, moment } from "obsidian";
+import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import type HopLinkViewerPlugin from "../main";
 import { VIEW_TYPE_HOP_LINK_VIEWER } from "./constants";
 import { resolveAnchor } from "./anchor";
 import { hopSuggestions } from "./graph";
+
+function formatModifiedTime(timestamp: number): string {
+	const date = new Date(timestamp);
+	const pad = (value: number): string => String(value).padStart(2, "0");
+	return [
+		String(date.getFullYear()),
+		pad(date.getMonth() + 1),
+		pad(date.getDate()),
+	].join("-") + ` ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 export class HopLinkViewerView extends ItemView {
 	plugin: HopLinkViewerPlugin;
@@ -127,7 +137,11 @@ export class HopLinkViewerView extends ItemView {
 			text: includeDirect ? "-hop link suggestions" : "-hop missing links",
 		});
 
-		const anchor = resolveAnchor(this.app, this.plugin.settings);
+		const anchor = resolveAnchor(
+			this.app,
+			this.plugin.settings,
+			this.plugin.lastEditedPath
+		);
 
 		if (!anchor) {
 			container.createEl("p", {
@@ -147,10 +161,9 @@ export class HopLinkViewerView extends ItemView {
 		});
 		anchorLink.dataset.href = anchor.path;
 
-		const mtime = moment(anchor.stat.mtime);
 		anchorSection.createSpan({
 			cls: "hop-link-viewer-mtime",
-			text: ` · modified ${mtime.format("YYYY-MM-DD HH:mm")}`,
+			text: ` · modified ${formatModifiedTime(anchor.stat.mtime)}`,
 		});
 
 		const suggestions = hopSuggestions(this.app, anchor.path, this.plugin.settings);

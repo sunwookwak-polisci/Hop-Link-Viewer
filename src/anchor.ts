@@ -5,24 +5,13 @@ function isValidAnchorFile(file: TFile): boolean {
 	return file.extension === "md";
 }
 
-export function resolveLastEdited(app: App, _settings: HopLinkViewerSettings): TFile | null {
-	const markdownFiles = app.vault.getMarkdownFiles();
-	let best: TFile | null = null;
-	let bestMtime = 0;
-
-	for (const file of markdownFiles) {
-		if (!isValidAnchorFile(file)) continue;
-		const stat = file.stat;
-		if (stat.mtime > bestMtime) {
-			bestMtime = stat.mtime;
-			best = file;
-		}
-	}
-
-	return best;
+function resolveFilePath(app: App, path: string | null): TFile | null {
+	if (!path) return null;
+	const file = app.vault.getAbstractFileByPath(path);
+	return file instanceof TFile && isValidAnchorFile(file) ? file : null;
 }
 
-export function resolveLastViewed(app: App, _settings: HopLinkViewerSettings): TFile | null {
+export function resolveLastViewed(app: App): TFile | null {
 	const active = app.workspace.getActiveFile();
 	if (active && isValidAnchorFile(active)) {
 		return active;
@@ -39,7 +28,11 @@ export function resolveLastViewed(app: App, _settings: HopLinkViewerSettings): T
 	return null;
 }
 
-export function resolveActiveFile(app: App, _settings: HopLinkViewerSettings): TFile | null {
+export function resolveLastEdited(app: App, lastEditedPath: string | null): TFile | null {
+	return resolveFilePath(app, lastEditedPath) ?? resolveLastViewed(app);
+}
+
+export function resolveActiveFile(app: App): TFile | null {
 	const active = app.workspace.getActiveFile();
 	if (active && isValidAnchorFile(active)) {
 		return active;
@@ -50,17 +43,18 @@ export function resolveActiveFile(app: App, _settings: HopLinkViewerSettings): T
 export function resolveAnchor(
 	app: App,
 	settings: HopLinkViewerSettings,
+	lastEditedPath: string | null,
 	mode?: AnchorMode
 ): TFile | null {
 	const anchorMode = mode ?? settings.anchorMode;
 
 	switch (anchorMode) {
 		case "last-edited":
-			return resolveLastEdited(app, settings);
+			return resolveLastEdited(app, lastEditedPath);
 		case "last-viewed":
-			return resolveLastViewed(app, settings);
+			return resolveLastViewed(app);
 		case "active-file":
 		default:
-			return resolveActiveFile(app, settings);
+			return resolveActiveFile(app);
 	}
 }
