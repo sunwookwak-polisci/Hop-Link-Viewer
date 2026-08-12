@@ -38,10 +38,20 @@ class LinkGraph {
 	}
 
 	private addEdge(a: string, b: string): void {
-		if (!this.connections.has(a)) this.connections.set(a, new Set());
-		if (!this.connections.has(b)) this.connections.set(b, new Set());
-		this.connections.get(a)!.add(b);
-		this.connections.get(b)!.add(a);
+		let aConnections = this.connections.get(a);
+		if (!aConnections) {
+			aConnections = new Set();
+			this.connections.set(a, aConnections);
+		}
+
+		let bConnections = this.connections.get(b);
+		if (!bConnections) {
+			bConnections = new Set();
+			this.connections.set(b, bConnections);
+		}
+
+		aConnections.add(b);
+		bConnections.add(a);
 	}
 
 	getConnections(filePath: string): string[] {
@@ -67,11 +77,15 @@ function getMtime(app: App, path: string): number {
 	return file instanceof TFile ? file.stat.mtime : 0;
 }
 
-function shuffleSuggestions<T>(items: T[]): T[] {
+function shuffleSuggestions(items: LinkSuggestion[]): LinkSuggestion[] {
 	const shuffled = [...items];
 	for (let i = shuffled.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
-		[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+		const itemAtI = shuffled[i];
+		const itemAtJ = shuffled[j];
+		if (!itemAtI || !itemAtJ) continue;
+		shuffled[i] = itemAtJ;
+		shuffled[j] = itemAtI;
 	}
 	return shuffled;
 }

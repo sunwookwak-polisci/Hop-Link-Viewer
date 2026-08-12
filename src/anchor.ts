@@ -28,7 +28,7 @@ export function resolveLastViewed(app: App, _settings: HopLinkViewerSettings): T
 		return active;
 	}
 
-	const recent = app.workspace.getLastOpenFiles?.() ?? [];
+	const recent = app.workspace.getLastOpenFiles();
 	for (const path of recent) {
 		const file = app.vault.getAbstractFileByPath(path);
 		if (file instanceof TFile && isValidAnchorFile(file)) {

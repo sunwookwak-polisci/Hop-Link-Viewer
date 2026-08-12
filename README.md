@@ -97,6 +97,8 @@ It is built for **serendipity on demand**: an always-ready sidebar that nudges y
 
 ## Install via BRAT (recommended for beta)
 
+Requires Obsidian 1.13.0 or newer.
+
 1. Install the [BRAT](https://github.com/TfTHacker/obsidian42-brat) plugin from Obsidian Community plugins.
 2. Open **Settings → BRAT** → **Add Beta plugin**.
 3. Enter the repository:
@@ -174,6 +176,7 @@ No ranking beyond the chosen **List order** setting — sort the full candidate 
 ```bash
 npm install
 npm run dev    # watch mode
+npm run lint   # official Obsidian and type-aware checks
 npm run build  # production bundle → main.js
 ```
 

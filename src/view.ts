@@ -24,11 +24,12 @@ export class HopLinkViewerView extends ItemView {
 		return "git-branch";
 	}
 
-	async onOpen(): Promise<void> {
+	onOpen(): Promise<void> {
 		this.contentEl.addClass("hop-link-viewer-view");
 		this.registerLinkHandlers();
 		this.registerHopControls();
 		this.render();
+		return Promise.resolve();
 	}
 
 	async onClose(): Promise<void> {
@@ -180,7 +181,7 @@ export class HopLinkViewerView extends ItemView {
 					item.createSpan({
 						cls: "hop-link-viewer-hop-level",
 						text: String(suggestion.hop),
-						attr: { title: `${suggestion.hop}-hop from anchor` },
+						attr: { title: `${String(suggestion.hop)}-hop from anchor` },
 					});
 				}
 			}
@@ -188,8 +189,8 @@ export class HopLinkViewerView extends ItemView {
 			container.createEl("p", {
 				cls: "hop-link-viewer-empty",
 				text: includeDirect
-					? `No ${hops}-hop suggestions yet.`
-					: `No missing ${hops}-hop network links predicted yet.`,
+					? `No ${String(hops)}-hop suggestions yet.`
+					: `No missing ${String(hops)}-hop network links predicted yet.`,
 			});
 		}
 	}

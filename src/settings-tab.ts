@@ -1,6 +1,13 @@
-import { App, normalizePath, PluginSettingTab, Setting } from "obsidian";
+import {
+	normalizePath,
+	PluginSettingTab,
+	type App,
+	type SettingDefinitionItem,
+} from "obsidian";
 import type HopLinkViewerPlugin from "../main";
-import type { AnchorMode, SortOrder } from "./constants";
+import type { HopLinkViewerSettings } from "./constants";
+
+type SettingKey = keyof HopLinkViewerSettings;
 
 export class HopLinkViewerSettingTab extends PluginSettingTab {
 	plugin: HopLinkViewerPlugin;
@@ -10,122 +17,160 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
+	getSettingDefinitions(): SettingDefinitionItem<SettingKey>[] {
+		return [
+			{
+				name: "Hop depth",
+				desc: "Maximum hop distance from the anchor. Shows non-direct notes from hop 2 up to this depth; hop 1 appears only when direct links are included.",
+				control: {
+					type: "number",
+					key: "hops",
+					placeholder: "3",
+					min: 1,
+					step: 1,
+					validate: (value) =>
+						Number.isInteger(value) && value >= 1
+							? undefined
+							: "Hop depth must be a whole number of 1 or more.",
+				},
+			},
+			{
+				name: "Display cap",
+				desc: "Maximum number of suggestions to show.",
+				control: {
+					type: "number",
+					key: "displayCap",
+					placeholder: "10",
+					min: 1,
+					step: 1,
+					validate: (value) =>
+						Number.isInteger(value) && value >= 1
+							? undefined
+							: "Display cap must be a whole number of 1 or more.",
+				},
+			},
+			{
+				name: "Excluded folder paths",
+				desc: "One folder prefix per line. Notes under these paths are excluded from suggestions (not from anchor selection).",
+				control: {
+					type: "textarea",
+					key: "excludedPaths",
+					placeholder: "Daily Notes/\nTemplates/",
+					rows: 4,
+				},
+			},
+			{
+				name: "Sidebar anchor mode",
+				desc: "How the sidebar chooses the anchor note for suggestions.",
+				control: {
+					type: "dropdown",
+					key: "anchorMode",
+					options: {
+						"active-file": "Active file (focused pane)",
+						"last-edited": "Last edited (most recently modified)",
+						"last-viewed": "Last viewed (active or recently opened)",
+					},
+				},
+			},
+			{
+				name: "List order",
+				desc: "How to sort suggestions before applying the display cap.",
+				control: {
+					type: "dropdown",
+					key: "sortOrder",
+					options: {
+						"walk-order": "Graph walk order (default)",
+						"mtime-desc": "Recently modified (newest first)",
+						"mtime-asc": "Recently modified (oldest first)",
+						"link-count-desc": "Most linked notes first",
+						alphabetical: "Alphabetical (A–Z)",
+						random: "Random",
+					},
+				},
+			},
+			{
+				name: "Include direct links",
+				desc: "Also show notes already linked to the anchor. Direct links are marked with a “linked” badge.",
+				control: {
+					type: "toggle",
+					key: "includeDirectLinks",
+				},
+			},
+			{
+				name: "Auto-open sidebar on startup",
+				desc: "Open this sidebar when Obsidian starts.",
+				control: {
+					type: "toggle",
+					key: "autoOpenSidebar",
+				},
+			},
+		];
+	}
 
-		new Setting(containerEl)
-			.setName("Hop depth")
-			.setDesc("Maximum hop distance from the anchor. Shows non-direct notes from hop 2 up to this depth; hop 1 appears only when direct links are included.")
-			.addText((text) =>
-				text
-					.setPlaceholder("3")
-					.setValue(String(this.plugin.settings.hops))
-					.onChange(async (value) => {
-						const parsed = parseInt(value, 10);
-						if (!isNaN(parsed) && parsed >= 1) {
-							this.plugin.settings.hops = parsed;
-							await this.plugin.saveSettings();
-							this.plugin.refreshViews();
-						}
-					})
-			);
+	getControlValue(key: string): unknown {
+		switch (key) {
+			case "hops":
+			case "displayCap":
+			case "anchorMode":
+			case "sortOrder":
+			case "includeDirectLinks":
+			case "autoOpenSidebar":
+				return this.plugin.settings[key];
+			case "excludedPaths":
+				return this.plugin.settings.excludedPaths.join("\n");
+			default:
+				return undefined;
+		}
+	}
 
-		new Setting(containerEl)
-			.setName("Display cap")
-			.setDesc("Maximum number of suggestions to show.")
-			.addText((text) =>
-				text
-					.setPlaceholder("10")
-					.setValue(String(this.plugin.settings.displayCap))
-					.onChange(async (value) => {
-						const parsed = parseInt(value, 10);
-						if (!isNaN(parsed) && parsed >= 1) {
-							this.plugin.settings.displayCap = parsed;
-							await this.plugin.saveSettings();
-							this.plugin.refreshViews();
-						}
-					})
-			);
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		switch (key) {
+			case "hops":
+			case "displayCap":
+				if (typeof value !== "number" || !Number.isInteger(value) || value < 1) return;
+				this.plugin.settings[key] = value;
+				break;
+			case "excludedPaths":
+				if (typeof value !== "string") return;
+				this.plugin.settings.excludedPaths = value
+					.split("\n")
+					.map((line) => line.trim())
+					.filter((line) => line.length > 0)
+					.map((line) => normalizePath(line));
+				break;
+			case "anchorMode":
+				if (
+					value !== "active-file" &&
+					value !== "last-edited" &&
+					value !== "last-viewed"
+				) {
+					return;
+				}
+				this.plugin.settings.anchorMode = value;
+				break;
+			case "sortOrder":
+				if (
+					value !== "walk-order" &&
+					value !== "mtime-desc" &&
+					value !== "mtime-asc" &&
+					value !== "link-count-desc" &&
+					value !== "alphabetical" &&
+					value !== "random"
+				) {
+					return;
+				}
+				this.plugin.settings.sortOrder = value;
+				break;
+			case "includeDirectLinks":
+			case "autoOpenSidebar":
+				if (typeof value !== "boolean") return;
+				this.plugin.settings[key] = value;
+				break;
+			default:
+				return;
+		}
 
-		new Setting(containerEl)
-			.setName("Excluded folder paths")
-			.setDesc("One folder prefix per line. Notes under these paths are excluded from suggestions (not from anchor selection).")
-			.addTextArea((text) => {
-				text
-					.setPlaceholder("Daily Notes/\nTemplates/")
-					.setValue(this.plugin.settings.excludedPaths.join("\n"))
-					.onChange(async (value) => {
-						this.plugin.settings.excludedPaths = value
-							.split("\n")
-							.map((line) => line.trim())
-							.filter((line) => line.length > 0)
-							.map((line) => normalizePath(line));
-						await this.plugin.saveSettings();
-						this.plugin.refreshViews();
-					});
-				text.inputEl.rows = 4;
-				text.inputEl.cols = 40;
-			});
-
-		new Setting(containerEl)
-			.setName("Sidebar anchor mode")
-			.setDesc("How the sidebar chooses the anchor note for suggestions.")
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("active-file", "Active file (focused pane)")
-					.addOption("last-edited", "Last edited (most recently modified)")
-					.addOption("last-viewed", "Last viewed (active or recently opened)")
-					.setValue(this.plugin.settings.anchorMode)
-					.onChange(async (value) => {
-						this.plugin.settings.anchorMode = value as AnchorMode;
-						await this.plugin.saveSettings();
-						this.plugin.refreshViews();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("List order")
-			.setDesc("How to sort suggestions before applying the display cap.")
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("walk-order", "Graph walk order (default)")
-					.addOption("mtime-desc", "Recently modified (newest first)")
-					.addOption("mtime-asc", "Recently modified (oldest first)")
-					.addOption("link-count-desc", "Most linked notes first")
-					.addOption("alphabetical", "Alphabetical (A–Z)")
-					.addOption("random", "Random")
-					.setValue(this.plugin.settings.sortOrder)
-					.onChange(async (value) => {
-						this.plugin.settings.sortOrder = value as SortOrder;
-						await this.plugin.saveSettings();
-						this.plugin.refreshViews();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Include direct links")
-			.setDesc("Also show notes already linked to the anchor. Direct links are marked with a “linked” badge.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.includeDirectLinks)
-					.onChange(async (value) => {
-						this.plugin.settings.includeDirectLinks = value;
-						await this.plugin.saveSettings();
-						this.plugin.refreshViews();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Auto-open sidebar on startup")
-			.setDesc("Open this sidebar when Obsidian starts.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.autoOpenSidebar)
-					.onChange(async (value) => {
-						this.plugin.settings.autoOpenSidebar = value;
-						await this.plugin.saveSettings();
-					})
-			);
+		await this.plugin.saveSettings();
+		this.plugin.refreshViews();
 	}
 }

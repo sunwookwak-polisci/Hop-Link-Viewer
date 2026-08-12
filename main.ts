@@ -3,6 +3,60 @@ import { DEFAULT_SETTINGS, VIEW_TYPE_HOP_LINK_VIEWER, type HopLinkViewerSettings
 import { HopLinkViewerView } from "./src/view";
 import { HopLinkViewerSettingTab } from "./src/settings-tab";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+function parseSettings(value: unknown): HopLinkViewerSettings {
+	const settings: HopLinkViewerSettings = {
+		...DEFAULT_SETTINGS,
+		excludedPaths: [...DEFAULT_SETTINGS.excludedPaths],
+	};
+
+	if (!isRecord(value)) return settings;
+
+	if (typeof value.hops === "number" && Number.isInteger(value.hops) && value.hops >= 1) {
+		settings.hops = value.hops;
+	}
+	if (
+		typeof value.displayCap === "number" &&
+		Number.isInteger(value.displayCap) &&
+		value.displayCap >= 1
+	) {
+		settings.displayCap = value.displayCap;
+	}
+	if (Array.isArray(value.excludedPaths)) {
+		settings.excludedPaths = value.excludedPaths.filter(
+			(path): path is string => typeof path === "string"
+		);
+	}
+	if (
+		value.anchorMode === "active-file" ||
+		value.anchorMode === "last-edited" ||
+		value.anchorMode === "last-viewed"
+	) {
+		settings.anchorMode = value.anchorMode;
+	}
+	if (
+		value.sortOrder === "walk-order" ||
+		value.sortOrder === "mtime-desc" ||
+		value.sortOrder === "mtime-asc" ||
+		value.sortOrder === "link-count-desc" ||
+		value.sortOrder === "alphabetical" ||
+		value.sortOrder === "random"
+	) {
+		settings.sortOrder = value.sortOrder;
+	}
+	if (typeof value.includeDirectLinks === "boolean") {
+		settings.includeDirectLinks = value.includeDirectLinks;
+	}
+	if (typeof value.autoOpenSidebar === "boolean") {
+		settings.autoOpenSidebar = value.autoOpenSidebar;
+	}
+
+	return settings;
+}
+
 export default class HopLinkViewerPlugin extends Plugin {
 	settings: HopLinkViewerSettings = DEFAULT_SETTINGS;
 	private refreshTimeout: number | null = null;
@@ -71,8 +125,8 @@ export default class HopLinkViewerPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		const savedSettings = (await this.loadData()) as Partial<HopLinkViewerSettings> | null;
-		this.settings = { ...DEFAULT_SETTINGS, ...(savedSettings ?? {}) };
+		const savedSettings: unknown = await this.loadData();
+		this.settings = parseSettings(savedSettings);
 	}
 
 	async saveSettings(): Promise<void> {
@@ -101,7 +155,9 @@ export default class HopLinkViewerPlugin extends Plugin {
 	async activateView(): Promise<void> {
 		const { workspace } = this.app;
 
-		let leaf: WorkspaceLeaf | null = workspace.getLeavesOfType(VIEW_TYPE_HOP_LINK_VIEWER)[0] ?? null;
+		let leaf: WorkspaceLeaf | undefined = workspace.getLeavesOfType(
+			VIEW_TYPE_HOP_LINK_VIEWER
+		)[0];
 
 		if (!leaf) {
 			const rightLeaf = workspace.getRightLeaf(false);
@@ -114,8 +170,8 @@ export default class HopLinkViewerPlugin extends Plugin {
 			}
 		}
 
-		if (leaf) {
-			await workspace.revealLeaf(leaf);
-		}
+		if (!leaf) return;
+
+		await workspace.revealLeaf(leaf);
 	}
 }
