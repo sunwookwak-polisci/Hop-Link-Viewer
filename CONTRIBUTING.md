@@ -18,6 +18,8 @@ Thanks for helping improve Hop-Link Viewer. Bug reports, focused feature proposa
 
 Keep changes narrowly scoped. Update `README.md` when a change affects user-visible behavior, settings, installation, or compatibility. Do not edit the generated `main.js` file by hand.
 
+Agent instructions for work from this repository are in [AGENTS-cloud.md](AGENTS-cloud.md).
+
 ## Pull requests
 
 Describe the problem, the chosen fix, and how you verified it. Keep unrelated formatting or refactoring out of the same pull request so the behavioral change remains easy to review.
