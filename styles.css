@@ -1,5 +1,6 @@
 .hop-link-viewer-view {
 	padding: var(--size-4-2) var(--size-4-3);
+	font-size: var(--font-ui-small);
 }
 
 .hop-link-viewer-hop-setting {
