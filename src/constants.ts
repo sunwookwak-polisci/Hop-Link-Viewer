@@ -10,6 +10,8 @@ export const DEFAULT_SETTINGS = {
 	autoOpenSidebar: false,
 };
 
+export type ViewerLocation = "sidebar" | "below" | "right";
+
 export type AnchorMode = "active-file" | "last-edited" | "last-viewed";
 
 export type SortOrder =

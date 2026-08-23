@@ -60,8 +60,8 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 				},
 			},
 			{
-				name: "Sidebar anchor mode",
-				desc: "How the sidebar chooses the anchor note for suggestions.",
+				name: "Anchor mode",
+				desc: "How the viewer chooses the anchor note for suggestions.",
 				control: {
 					type: "dropdown",
 					key: "anchorMode",
@@ -98,7 +98,7 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 			},
 			{
 				name: "Auto-open sidebar on startup",
-				desc: "Open this sidebar when Obsidian starts.",
+				desc: "Open the viewer in the sidebar when Obsidian starts.",
 				control: {
 					type: "toggle",
 					key: "autoOpenSidebar",

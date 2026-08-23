@@ -1,4 +1,4 @@
-import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
+import { ItemView, MarkdownView, TFile, WorkspaceLeaf } from "obsidian";
 import type HopLinkViewerPlugin from "../main";
 import { VIEW_TYPE_HOP_LINK_VIEWER } from "./constants";
 import { resolveAnchor } from "./anchor";
@@ -16,6 +16,7 @@ function formatModifiedTime(timestamp: number): string {
 
 export class HopLinkViewerView extends ItemView {
 	plugin: HopLinkViewerPlugin;
+	private linkedGroup: string | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: HopLinkViewerPlugin) {
 		super(leaf);
@@ -36,6 +37,12 @@ export class HopLinkViewerView extends ItemView {
 
 	onOpen(): Promise<void> {
 		this.contentEl.addClass("hop-link-viewer-view");
+		this.registerEvent(
+			this.leaf.on("group-change", (group) => {
+				this.linkedGroup = group || null;
+				this.render();
+			})
+		);
 		this.registerLinkHandlers();
 		this.registerHopControls();
 		this.render();
@@ -137,7 +144,7 @@ export class HopLinkViewerView extends ItemView {
 			text: includeDirect ? "-hop link suggestions" : "-hop missing links",
 		});
 
-		const anchor = resolveAnchor(
+		const anchor = this.resolveLinkedAnchor() ?? resolveAnchor(
 			this.app,
 			this.plugin.settings,
 			this.plugin.lastEditedPath
@@ -206,5 +213,35 @@ export class HopLinkViewerView extends ItemView {
 					: `No missing ${String(hops)}-hop network links predicted yet.`,
 			});
 		}
+	}
+
+	private resolveLinkedAnchor(): TFile | null {
+		if (this.plugin.settings.anchorMode !== "active-file") return null;
+
+		const stateGroupMember = this.leaf.getViewState().group;
+		const stateGroupFile = this.getMarkdownFile(stateGroupMember);
+		if (stateGroupFile) return stateGroupFile;
+
+		if (!this.linkedGroup) return null;
+		for (const leaf of this.app.workspace.getGroupLeaves(this.linkedGroup)) {
+			if (leaf === this.leaf) continue;
+			const file = this.getMarkdownFile(leaf);
+			if (file) return file;
+		}
+
+		return null;
+	}
+
+	private getMarkdownFile(leaf: WorkspaceLeaf | undefined): TFile | null {
+		if (!leaf) return null;
+		if (leaf.view instanceof MarkdownView) {
+			const file = leaf.view.file;
+			if (file instanceof TFile && file.extension === "md") return file;
+		}
+
+		const filePath = leaf.getViewState().state?.file;
+		if (typeof filePath !== "string") return null;
+		const file = this.app.vault.getAbstractFileByPath(filePath);
+		return file instanceof TFile && file.extension === "md" ? file : null;
 	}
 }
