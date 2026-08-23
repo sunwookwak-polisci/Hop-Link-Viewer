@@ -18,6 +18,7 @@ pnpm-debug.log*
 # Obsidian plugin local artifacts
 data.json
 .hotreload
+/Demo Vault/
 
 # ---------------------------------------------------------------------------
 # Local-only agent / internal workflow material (must never be committed)
