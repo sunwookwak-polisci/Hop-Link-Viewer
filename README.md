@@ -22,7 +22,11 @@ Each suggestion is a clickable link with a hop number (2, 3, …). Turn on **Inc
 
 ### Viewer
 
-Open it in the sidebar from the ribbon (**Open Hop-Link Viewer**) or the command palette (**Hop-Link Viewer: Open viewer in sidebar**). Use **Open viewer below active note** or **Open viewer to right of active note** to add a normal workspace pane while keeping the sidebar viewer open. When that pane is linked to a Markdown tab with Obsidian’s **Link with tab**, its active-file anchor follows the linked tab; the sidebar and any unlinked workspace viewer continue to follow the globally active note. The viewer shows a hop-depth stepper (synced with Settings), the current anchor and its last-modified time, and up to your display cap of suggestions (default 10).
+Open it in the sidebar from the ribbon (**Open Hop-Link Viewer**) or the command palette (**Hop-Link Viewer: Open viewer in sidebar**).
+
+Use **Open viewer below active note** or **Open viewer to right of active note** to open the plugin in a workspace pane. When that pane is linked to a Markdown tab with Obsidian’s **Link with tab**, its active-file anchor follows the linked tab. The sidebar and any unlinked workspace viewer continue to follow the globally active note.
+
+The viewer shows a hop-depth stepper (synced with Settings), the current anchor and its last-modified time, and up to your display cap of suggestions (default 10).
 
 Click or tap a suggestion to open it. On desktop, Ctrl/Cmd-click or middle-click opens a new tab. The list refreshes when you switch notes, open files, edit, or when link metadata updates. No query language or templates.
 
@@ -36,7 +40,6 @@ Requires Obsidian 1.13.0 or newer.
 2. Turn off **Restricted mode** if it is on.
 3. Click **Browse**, search for **Hop-Link Viewer**, then install and enable it.
 
-You can also open the [community listing](https://community.obsidian.md/plugins/hop-link-viewer), or copy `main.js`, `manifest.json`, and `styles.css` from [GitHub Releases](https://github.com/sunwookwak-polisci/Hop-Link-Viewer/releases) into `.obsidian/plugins/hop-link-viewer/`.
 
 ## Settings
 
@@ -52,7 +55,7 @@ You can also open the [community listing](https://community.obsidian.md/plugins/
 
 ### Anchor mode
 
-The **anchor** must be a markdown note. If none can be resolved, the viewer shows “No anchor note found.”
+The **anchor** must be a markdown note. If none can be resolved, the viewer shows “No anchor note found.” (Updates to support other file types are planned.)
 
 | Mode | Behavior |
 |------|----------|
