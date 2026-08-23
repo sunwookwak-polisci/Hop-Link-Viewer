@@ -4,7 +4,7 @@ Suggest notes **up to N hops** from an anchor note, skipping notes already linke
 
 ## What it does
 
-Hop-Link Viewer is a sidebar that walks your vault’s link graph outward from an **anchor** and lists nearby notes that are **not yet connected** to it.
+Hop-Link Viewer walks your vault’s link graph outward from an **anchor** and lists nearby notes that are **not yet connected** to it. It opens in the right sidebar by default, with commands for opening it below or beside the active note.
 
 A link counts in either direction: notes the anchor points to, and notes that point back. By default the sidebar skips those already-connected notes, so you see **missing** links instead of the same neighbors Obsidian already shows.
 
@@ -20,9 +20,9 @@ Anchor: **Project Alpha**, which links to **Jane Smith** and **Budget 2024**.
 
 Each suggestion is a clickable link with a hop number (2, 3, …). Turn on **Include direct links** to also list 1-hop neighbors; those show a **linked** badge instead of a hop number.
 
-### Sidebar
+### Viewer
 
-Open it from the ribbon (**Open Hop-Link Viewer**) or the command palette (**Hop-Link Viewer: Open viewer**). It shows a hop-depth stepper (synced with Settings), the current anchor and its last-modified time, and up to your display cap of suggestions (default 10).
+Open it in the sidebar from the ribbon (**Open Hop-Link Viewer**) or the command palette (**Hop-Link Viewer: Open viewer in sidebar**). Use **Open viewer below active note** or **Open viewer to right of active note** to add a normal workspace pane while keeping the sidebar viewer open. When that pane is linked to a Markdown tab with Obsidian’s **Link with tab**, its active-file anchor follows the linked tab; the sidebar and any unlinked workspace viewer continue to follow the globally active note. The viewer shows a hop-depth stepper (synced with Settings), the current anchor and its last-modified time, and up to your display cap of suggestions (default 10).
 
 Click or tap a suggestion to open it. On desktop, Ctrl/Cmd-click or middle-click opens a new tab. The list refreshes when you switch notes, open files, edit, or when link metadata updates. No query language or templates.
 
@@ -45,18 +45,18 @@ You can also open the [community listing](https://community.obsidian.md/plugins/
 | **Hop depth** | `3` | How far to walk from the anchor. Hop 1 appears only with **Include direct links**. |
 | **Display cap** | `10` | Maximum suggestions after sorting |
 | **Excluded folder paths** | _(empty)_ | One prefix per line. Hidden from the list only; those notes can still be the anchor, and the walk can still pass through them. |
-| **Sidebar anchor mode** | `active-file` | Which note is “you are here” |
+| **Anchor mode** | `active-file` | Which note is “you are here” |
 | **List order** | `walk-order` | Sort before applying the display cap |
 | **Include direct links** | off | Show 1-hop neighbors with a `linked` badge |
-| **Auto-open sidebar on startup** | off | Open the sidebar when Obsidian starts |
+| **Auto-open sidebar on startup** | off | Open the viewer in the sidebar when Obsidian starts |
 
 ### Anchor mode
 
-The **anchor** must be a markdown note. If none can be resolved, the sidebar shows “No anchor note found.”
+The **anchor** must be a markdown note. If none can be resolved, the viewer shows “No anchor note found.”
 
 | Mode | Behavior |
 |------|----------|
-| `active-file` | Markdown note in the focused pane |
+| `active-file` | Linked Markdown tab for a linked workspace viewer; otherwise, the Markdown note in the focused pane |
 | `last-edited` | Most recently modified markdown file tracked while the plugin was enabled; before the first tracked edit, same fallback as `last-viewed` |
 | `last-viewed` | Active markdown file if there is one; otherwise the first markdown file in recently opened files |
 

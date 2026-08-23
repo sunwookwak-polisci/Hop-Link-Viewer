@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 
 export default defineConfig([
 	{
-		ignores: [".internal/**", "main.js", "node_modules/**", "tmp/**"],
+		ignores: [".internal/**", "Demo Vault/**", "main.js", "node_modules/**", "tmp/**"],
 	},
 	...obsidianmd.configs.recommended,
 	...tseslint.configs.strictTypeChecked.map((config) => ({
