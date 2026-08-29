@@ -19,6 +19,7 @@ pnpm-debug.log*
 data.json
 .hotreload
 /Demo Vault/
+/HLP Demo Vault/
 
 # ---------------------------------------------------------------------------
 # Local-only agent / internal workflow material (must never be committed)

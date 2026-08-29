@@ -1,4 +1,12 @@
-import { MarkdownView, Platform, Plugin, TFile, WorkspaceLeaf } from "obsidian";
+import {
+	MarkdownView,
+	Platform,
+	Plugin,
+	TFile,
+	WorkspaceLeaf,
+	WorkspaceTabs,
+	type WorkspaceContainer,
+} from "obsidian";
 import {
 	DEFAULT_SETTINGS,
 	VIEW_TYPE_HOP_LINK_VIEWER,
@@ -218,22 +226,23 @@ export default class HopLinkViewerPlugin extends Plugin {
 
 	async activateView(location: ViewerLocation = "sidebar"): Promise<void> {
 		const { workspace } = this.app;
+		const container = this.getActiveContainer();
 		let leaf: WorkspaceLeaf | null | undefined;
 
 		if (location === "sidebar") {
-			leaf = await this.ensureSidebarView();
+			leaf = await this.ensureSidebarView(container);
 		} else {
-			const paneLeaves = workspace
-				.getLeavesOfType(VIEW_TYPE_HOP_LINK_VIEWER)
-				.filter((existingLeaf) => this.isRootLeaf(existingLeaf));
-			const referenceLeaf = this.getSplitReferenceLeaf(new Set(paneLeaves));
+			const paneLeaves = this.getViewerLeavesInContainer(container).filter((existingLeaf) =>
+				this.isRootLeaf(existingLeaf)
+			);
+			const referenceLeaf = this.getSplitReferenceLeaf(container, new Set(paneLeaves));
 
-			await this.ensureSidebarView();
+			await this.ensureSidebarView(container);
 			paneLeaves.forEach((paneLeaf) => {
 				paneLeaf.detach();
 			});
 
-			leaf = this.createViewerLeaf(location, referenceLeaf);
+			leaf = this.createViewerLeaf(location, container, referenceLeaf);
 			await leaf?.setViewState({
 				type: VIEW_TYPE_HOP_LINK_VIEWER,
 				active: true,
@@ -245,14 +254,18 @@ export default class HopLinkViewerPlugin extends Plugin {
 		await workspace.revealLeaf(leaf);
 	}
 
-	private async ensureSidebarView(): Promise<WorkspaceLeaf | null> {
-		const { workspace } = this.app;
-		let leaf = workspace
-			.getLeavesOfType(VIEW_TYPE_HOP_LINK_VIEWER)
-			.find((existingLeaf) => !this.isRootLeaf(existingLeaf));
+	private async ensureSidebarView(
+		container: WorkspaceContainer = this.getActiveContainer()
+	): Promise<WorkspaceLeaf | null> {
+		const windowLeaves = this.getViewerLeavesInContainer(container);
+		let leaf = windowLeaves.find((existingLeaf) => !this.isRootLeaf(existingLeaf));
+
+		if (!leaf && this.windowHasNoSidebar(container)) {
+			leaf = windowLeaves[0];
+		}
 
 		if (!leaf) {
-			leaf = this.createViewerLeaf("sidebar", null) ?? undefined;
+			leaf = this.createViewerLeaf("sidebar", container, null) ?? undefined;
 			await leaf?.setViewState({
 				type: VIEW_TYPE_HOP_LINK_VIEWER,
 				active: false,
@@ -264,6 +277,7 @@ export default class HopLinkViewerPlugin extends Plugin {
 
 	private createViewerLeaf(
 		location: ViewerLocation,
+		container: WorkspaceContainer,
 		referenceLeaf: WorkspaceLeaf | null
 	): WorkspaceLeaf | null {
 		const { workspace } = this.app;
@@ -282,8 +296,76 @@ export default class HopLinkViewerPlugin extends Plugin {
 			}
 			case "sidebar":
 			default:
-				return workspace.getRightLeaf(false);
+				return this.createSidebarLeaf(container);
 		}
+	}
+
+	private createSidebarLeaf(container: WorkspaceContainer): WorkspaceLeaf | null {
+		const { workspace } = this.app;
+
+		if (this.isMainWindowContainer(container) || Platform.isMobile) {
+			return workspace.getRightLeaf(false);
+		}
+
+		const sidebarLeaves: WorkspaceLeaf[] = [];
+		workspace.iterateAllLeaves((leaf) => {
+			if (this.isLeafInContainer(leaf, container) && !this.isRootLeaf(leaf)) {
+				sidebarLeaves.push(leaf);
+			}
+		});
+
+		const sidebarHost = sidebarLeaves[0]?.parent;
+		if (sidebarHost instanceof WorkspaceTabs) {
+			return workspace.createLeafInParent(sidebarHost.parent, 0);
+		}
+
+		return workspace.getLeaf("tab");
+	}
+
+	private getActiveContainer(): WorkspaceContainer {
+		const focusedWin = window.activeWindow;
+		const recent = this.app.workspace.getMostRecentLeaf();
+		if (recent && recent.getContainer().win === focusedWin) {
+			return recent.getContainer();
+		}
+
+		const focusedLeaves: WorkspaceContainer[] = [];
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (focusedLeaves.length > 0) return;
+			const container = leaf.getContainer();
+			if (container.win === focusedWin) {
+				focusedLeaves.push(container);
+			}
+		});
+		return focusedLeaves[0] ?? this.app.workspace.rootSplit;
+	}
+
+	private isMainWindowContainer(container: WorkspaceContainer): boolean {
+		return container.win === window;
+	}
+
+	private isLeafInContainer(leaf: WorkspaceLeaf, container: WorkspaceContainer): boolean {
+		return leaf.getContainer().win === container.win;
+	}
+
+	private getViewerLeavesInContainer(container: WorkspaceContainer): WorkspaceLeaf[] {
+		return this.app.workspace
+			.getLeavesOfType(VIEW_TYPE_HOP_LINK_VIEWER)
+			.filter((leaf) => this.isLeafInContainer(leaf, container));
+	}
+
+	private windowHasNoSidebar(container: WorkspaceContainer): boolean {
+		if (this.isMainWindowContainer(container) || Platform.isMobile) {
+			return false;
+		}
+
+		const sidebarLeaves: WorkspaceLeaf[] = [];
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (this.isLeafInContainer(leaf, container) && !this.isRootLeaf(leaf)) {
+				sidebarLeaves.push(leaf);
+			}
+		});
+		return sidebarLeaves.length === 0;
 	}
 
 	private isRootLeaf(targetLeaf: WorkspaceLeaf): boolean {
@@ -296,21 +378,28 @@ export default class HopLinkViewerPlugin extends Plugin {
 		return isRootLeaf;
 	}
 
-	private getSplitReferenceLeaf(excludedLeaves = new Set<WorkspaceLeaf>()): WorkspaceLeaf | null {
+	private getSplitReferenceLeaf(
+		container: WorkspaceContainer,
+		excludedLeaves = new Set<WorkspaceLeaf>()
+	): WorkspaceLeaf | null {
 		const { workspace } = this.app;
 		const activeMarkdownLeaf = workspace.getActiveViewOfType(MarkdownView)?.leaf;
-		if (activeMarkdownLeaf && !excludedLeaves.has(activeMarkdownLeaf)) {
+		if (
+			activeMarkdownLeaf &&
+			!excludedLeaves.has(activeMarkdownLeaf) &&
+			this.isLeafInContainer(activeMarkdownLeaf, container)
+		) {
 			return activeMarkdownLeaf;
 		}
 
-		const recentLeaf = workspace.getMostRecentLeaf(workspace.rootSplit);
+		const recentLeaf = workspace.getMostRecentLeaf(container);
 		if (recentLeaf && !excludedLeaves.has(recentLeaf)) {
 			return recentLeaf;
 		}
 
 		let fallbackLeaf: WorkspaceLeaf | null = null;
 		workspace.iterateRootLeaves((leaf) => {
-			if (!fallbackLeaf && !excludedLeaves.has(leaf)) {
+			if (!fallbackLeaf && !excludedLeaves.has(leaf) && this.isLeafInContainer(leaf, container)) {
 				fallbackLeaf = leaf;
 			}
 		});

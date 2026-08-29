@@ -147,7 +147,8 @@ export class HopLinkViewerView extends ItemView {
 		const anchor = this.resolveLinkedAnchor() ?? resolveAnchor(
 			this.app,
 			this.plugin.settings,
-			this.plugin.lastEditedPath
+			this.plugin.lastEditedPath,
+			this.leaf
 		);
 
 		if (!anchor) {

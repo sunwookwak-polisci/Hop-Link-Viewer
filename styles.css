@@ -78,7 +78,8 @@
 }
 
 .hop-link-viewer-list li {
-	margin-bottom: var(--size-2-1);
+	margin-bottom: var(--size-4-2);
+	line-height: var(--line-height-normal);
 }
 
 .hop-link-viewer-connected {

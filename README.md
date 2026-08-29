@@ -22,9 +22,9 @@ Each suggestion is a clickable link with a hop number (2, 3, …). Turn on **Inc
 
 ### Viewer
 
-Open it in the sidebar from the ribbon (**Open Hop-Link Viewer**) or the command palette (**Hop-Link Viewer: Open viewer in sidebar**).
+Open it in the sidebar from the ribbon (**Open Hop-Link Viewer**) or the command palette (**Hop-Link Viewer: Open viewer in sidebar**). Each Obsidian window can have its own sidebar viewer and workspace pane viewer.
 
-Use **Open viewer below active note** or **Open viewer to right of active note** to open the plugin in a workspace pane. When that pane is linked to a Markdown tab with Obsidian’s **Link with tab**, its active-file anchor follows the linked tab. The sidebar and any unlinked workspace viewer continue to follow the globally active note.
+Use **Open viewer below active note** or **Open viewer to right of active note** to open the plugin in a workspace pane in the current window. When that pane is linked to a Markdown tab with Obsidian’s **Link with tab**, its active-file anchor follows the linked tab. Unlinked viewers follow the active markdown note in the same window.
 
 The viewer shows a hop-depth stepper (synced with Settings), the current anchor and its last-modified time, and up to your display cap of suggestions (default 10).
 
@@ -59,7 +59,7 @@ The **anchor** must be a markdown note. If none can be resolved, the viewer show
 
 | Mode | Behavior |
 |------|----------|
-| `active-file` | Linked Markdown tab for a linked workspace viewer; otherwise, the Markdown note in the focused pane |
+| `active-file` | Linked Markdown tab for a linked workspace viewer; otherwise, the active markdown note in the same window |
 | `last-edited` | Most recently modified markdown file tracked while the plugin was enabled; before the first tracked edit, same fallback as `last-viewed` |
 | `last-viewed` | Active markdown file if there is one; otherwise the first markdown file in recently opened files |
 
