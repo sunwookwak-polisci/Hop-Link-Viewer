@@ -4,6 +4,8 @@ import {
 	Plugin,
 	TFile,
 	WorkspaceLeaf,
+	WorkspaceMobileDrawer,
+	WorkspaceSidedock,
 	WorkspaceTabs,
 	type WorkspaceContainer,
 } from "obsidian";
@@ -237,7 +239,9 @@ export default class HopLinkViewerPlugin extends Plugin {
 			);
 			const referenceLeaf = this.getSplitReferenceLeaf(container, new Set(paneLeaves));
 
-			await this.ensureSidebarView(container);
+			if (!this.windowHasNoSidebar(container)) {
+				await this.ensureSidebarView(container);
+			}
 			paneLeaves.forEach((paneLeaf) => {
 				paneLeaf.detach();
 			});
@@ -309,14 +313,19 @@ export default class HopLinkViewerPlugin extends Plugin {
 
 		const sidebarLeaves: WorkspaceLeaf[] = [];
 		workspace.iterateAllLeaves((leaf) => {
-			if (this.isLeafInContainer(leaf, container) && !this.isRootLeaf(leaf)) {
+			if (this.isLeafInContainer(leaf, container) && this.isSidebarLeaf(leaf)) {
 				sidebarLeaves.push(leaf);
 			}
 		});
 
 		const sidebarHost = sidebarLeaves[0]?.parent;
 		if (sidebarHost instanceof WorkspaceTabs) {
-			return workspace.createLeafInParent(sidebarHost.parent, 0);
+			return workspace.createLeafInParent(sidebarHost, -1);
+		}
+
+		const referenceLeaf = this.getSplitReferenceLeaf(container);
+		if (referenceLeaf) {
+			return workspace.createLeafBySplit(referenceLeaf, "vertical");
 		}
 
 		return workspace.getLeaf("tab");
@@ -361,21 +370,47 @@ export default class HopLinkViewerPlugin extends Plugin {
 
 		const sidebarLeaves: WorkspaceLeaf[] = [];
 		this.app.workspace.iterateAllLeaves((leaf) => {
-			if (this.isLeafInContainer(leaf, container) && !this.isRootLeaf(leaf)) {
+			if (this.isLeafInContainer(leaf, container) && this.isSidebarLeaf(leaf)) {
 				sidebarLeaves.push(leaf);
 			}
 		});
 		return sidebarLeaves.length === 0;
 	}
 
-	private isRootLeaf(targetLeaf: WorkspaceLeaf): boolean {
-		let isRootLeaf = false;
-		this.app.workspace.iterateRootLeaves((leaf) => {
-			if (leaf === targetLeaf) {
-				isRootLeaf = true;
+	private getContainerDocks(container: WorkspaceContainer): {
+		left: WorkspaceTabs["parent"] | null;
+		right: WorkspaceTabs["parent"] | null;
+	} {
+		const record = container as unknown as {
+			leftSplit?: WorkspaceTabs["parent"];
+			rightSplit?: WorkspaceTabs["parent"];
+		};
+		return {
+			left: record.leftSplit ?? null,
+			right: record.rightSplit ?? null,
+		};
+	}
+
+	private isSidebarLeaf(leaf: WorkspaceLeaf): boolean {
+		try {
+			const root = leaf.getRoot();
+			const { workspace } = this.app;
+			if (root === workspace.leftSplit || root === workspace.rightSplit) {
+				return true;
 			}
-		});
-		return isRootLeaf;
+			if (root instanceof WorkspaceSidedock || root instanceof WorkspaceMobileDrawer) {
+				return true;
+			}
+			const docks = this.getContainerDocks(leaf.getContainer());
+			return root === docks.left || root === docks.right;
+		} catch {
+			// Popout windows can throw on getRoot()/instanceof across frames.
+			return false;
+		}
+	}
+
+	private isRootLeaf(targetLeaf: WorkspaceLeaf): boolean {
+		return !this.isSidebarLeaf(targetLeaf);
 	}
 
 	private getSplitReferenceLeaf(

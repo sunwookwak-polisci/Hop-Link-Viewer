@@ -22,7 +22,7 @@ Each suggestion is a clickable link with a hop number (2, 3, …). Turn on **Inc
 
 ### Viewer
 
-Open it in the sidebar from the ribbon (**Open Hop-Link Viewer**) or the command palette (**Hop-Link Viewer: Open viewer in sidebar**). Each Obsidian window can have its own sidebar viewer and workspace pane viewer.
+Open it in the sidebar from the ribbon (**Open Hop-Link Viewer**) or the command palette (**Hop-Link Viewer: Open viewer in sidebar**). Each Obsidian window can have its own sidebar viewer and workspace pane viewer. In a pop-out window that has no sidebar, **Open viewer in sidebar** splits the viewer to the right of the active note.
 
 Use **Open viewer below active note** or **Open viewer to right of active note** to open the plugin in a workspace pane in the current window. When that pane is linked to a Markdown tab with Obsidian’s **Link with tab**, its active-file anchor follows the linked tab. Unlinked viewers follow the active markdown note in the same window.
 
