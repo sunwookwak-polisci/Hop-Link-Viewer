@@ -14,6 +14,7 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+/RELEASE-1.2.0.md
 
 # Obsidian plugin local artifacts
 data.json
@@ -58,6 +59,7 @@ docs/
 # Common accidental copies / editor leftovers of internal files
 *task-handoff*
 *cross-agent-workflow*
+*GrokBot*
 *.local.md
 *~
 *.swp

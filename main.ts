@@ -1,5 +1,6 @@
 import {
 	MarkdownView,
+	Notice,
 	Platform,
 	Plugin,
 	TFile,
@@ -9,12 +10,17 @@ import {
 } from "obsidian";
 import {
 	DEFAULT_SETTINGS,
+	HIERARCHY_STYLE_LABELS,
 	VIEW_TYPE_HOP_LINK_VIEWER,
+	parseHierarchyStyle,
+	nextHierarchyStyle,
 	type HopLinkViewerSettings,
 	type ViewerLocation,
 } from "./src/constants";
 import { HopLinkViewerView } from "./src/view";
 import { HopLinkViewerSettingTab } from "./src/settings-tab";
+import { fileFromLeaf } from "./src/anchor";
+import { isValidHopFile } from "./src/graph";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
@@ -68,6 +74,10 @@ function parseSettings(value: unknown): HopLinkViewerSettings {
 	} else if (typeof value.autoOpenViewer === "boolean") {
 		settings.autoOpenSidebar = value.autoOpenViewer;
 	}
+	const hierarchyStyle = parseHierarchyStyle(value.hierarchyStyle);
+	if (hierarchyStyle) {
+		settings.hierarchyStyle = hierarchyStyle;
+	}
 
 	return settings;
 }
@@ -115,6 +125,14 @@ export default class HopLinkViewerPlugin extends Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: "cycle-display-style",
+			name: "Cycle display style",
+			callback: () => {
+				void this.cycleDisplayStyle();
+			},
+		});
+
 		this.addSettingTab(new HopLinkViewerSettingTab(this.app, this));
 
 		this.registerEvent(
@@ -131,7 +149,7 @@ export default class HopLinkViewerPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.vault.on("modify", (file) => {
-				if (file instanceof TFile && file.extension === "md") {
+				if (file instanceof TFile && isValidHopFile(file)) {
 					void this.setLastEditedPath(file.path);
 				}
 				this.scheduleRefresh();
@@ -142,7 +160,7 @@ export default class HopLinkViewerPlugin extends Plugin {
 			this.app.vault.on("rename", (file, oldPath) => {
 				if (oldPath === this.lastEditedPath) {
 					void this.setLastEditedPath(
-						file instanceof TFile && file.extension === "md" ? file.path : null
+						file instanceof TFile && isValidHopFile(file) ? file.path : null
 					);
 				}
 			})
@@ -190,6 +208,13 @@ export default class HopLinkViewerPlugin extends Plugin {
 
 	async saveSettings(): Promise<void> {
 		await this.savePluginData();
+	}
+
+	private async cycleDisplayStyle(): Promise<void> {
+		this.settings.hierarchyStyle = nextHierarchyStyle(this.settings.hierarchyStyle);
+		await this.saveSettings();
+		this.refreshViews();
+		new Notice(`Hop-Link Viewer: ${HIERARCHY_STYLE_LABELS[this.settings.hierarchyStyle]}`);
 	}
 
 	private async setLastEditedPath(path: string | null): Promise<void> {
@@ -383,6 +408,16 @@ export default class HopLinkViewerPlugin extends Plugin {
 		excludedLeaves = new Set<WorkspaceLeaf>()
 	): WorkspaceLeaf | null {
 		const { workspace } = this.app;
+		const recentLeaf = workspace.getMostRecentLeaf(container);
+		if (
+			recentLeaf &&
+			!excludedLeaves.has(recentLeaf) &&
+			this.isLeafInContainer(recentLeaf, container) &&
+			fileFromLeaf(this.app, recentLeaf)
+		) {
+			return recentLeaf;
+		}
+
 		const activeMarkdownLeaf = workspace.getActiveViewOfType(MarkdownView)?.leaf;
 		if (
 			activeMarkdownLeaf &&
@@ -392,9 +427,9 @@ export default class HopLinkViewerPlugin extends Plugin {
 			return activeMarkdownLeaf;
 		}
 
-		const recentLeaf = workspace.getMostRecentLeaf(container);
-		if (recentLeaf && !excludedLeaves.has(recentLeaf)) {
-			return recentLeaf;
+		const fallbackRecent = workspace.getMostRecentLeaf(container);
+		if (fallbackRecent && !excludedLeaves.has(fallbackRecent)) {
+			return fallbackRecent;
 		}
 
 		let fallbackLeaf: WorkspaceLeaf | null = null;

@@ -36,11 +36,11 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 			},
 			{
 				name: "Display cap",
-				desc: "Maximum number of suggestions to show.",
+				desc: "For List, maximum unique notes. For Chain and Single, maximum first-level items; nested descendants are not capped (still limited by hop depth and filters).",
 				control: {
 					type: "number",
 					key: "displayCap",
-					placeholder: "10",
+					placeholder: "15",
 					min: 1,
 					step: 1,
 					validate: (value) =>
@@ -61,7 +61,7 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 			},
 			{
 				name: "Anchor mode",
-				desc: "How the viewer chooses the anchor note for suggestions.",
+				desc: "How the viewer chooses the anchor for suggestions.",
 				control: {
 					type: "dropdown",
 					key: "anchorMode",
@@ -85,6 +85,19 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 						"link-count-desc": "Most linked notes first",
 						alphabetical: "Alphabetical (A–Z)",
 						random: "Random",
+					},
+				},
+			},
+			{
+				name: "Display style",
+				desc: "How to show suggestions: a unique-note list, Chain walks that can repeat notes on each path, or Single (each note once, with extra parent links nested below).",
+				control: {
+					type: "dropdown",
+					key: "hierarchyStyle",
+					options: {
+						list: "List (unique notes)",
+						chain: "Chain (all paths)",
+						single: "Single (each note once)",
 					},
 				},
 			},
@@ -113,6 +126,7 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 			case "displayCap":
 			case "anchorMode":
 			case "sortOrder":
+			case "hierarchyStyle":
 			case "includeDirectLinks":
 			case "autoOpenSidebar":
 				return this.plugin.settings[key];
@@ -160,6 +174,12 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 					return;
 				}
 				this.plugin.settings.sortOrder = value;
+				break;
+			case "hierarchyStyle":
+				if (value !== "list" && value !== "chain" && value !== "single") {
+					return;
+				}
+				this.plugin.settings.hierarchyStyle = value;
 				break;
 			case "includeDirectLinks":
 			case "autoOpenSidebar":

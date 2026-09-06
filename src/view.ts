@@ -1,8 +1,15 @@
-import { ItemView, MarkdownView, TFile, WorkspaceLeaf } from "obsidian";
+import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import type HopLinkViewerPlugin from "../main";
-import { VIEW_TYPE_HOP_LINK_VIEWER } from "./constants";
-import { resolveAnchor } from "./anchor";
-import { hopSuggestions } from "./graph";
+import {
+	HIERARCHY_STYLE_LABELS,
+	HIERARCHY_STYLE_ORDER,
+	VIEW_TYPE_HOP_LINK_VIEWER,
+	isHierarchyStyle,
+	type HierarchyStyle,
+	type HopNode,
+} from "./constants";
+import { fileFromLeaf, resolveAnchor } from "./anchor";
+import { hopWalk, sortHopNodes } from "./graph";
 
 function formatModifiedTime(timestamp: number): string {
 	const date = new Date(timestamp);
@@ -69,6 +76,18 @@ export class HopLinkViewerView extends ItemView {
 		});
 
 		this.registerDomEvent(this.contentEl, "change", (evt) => {
+			const select = (evt.target as HTMLElement).closest<HTMLSelectElement>(
+				".hop-link-viewer-style-select"
+			);
+			if (select) {
+				if (isHierarchyStyle(select.value)) {
+					void this.setHierarchyStyle(select.value);
+				} else {
+					this.render();
+				}
+				return;
+			}
+
 			const input = (evt.target as HTMLElement).closest<HTMLInputElement>(
 				".hop-link-viewer-hop-input"
 			);
@@ -91,6 +110,16 @@ export class HopLinkViewerView extends ItemView {
 		this.plugin.settings.hops = clamped;
 		await this.plugin.saveSettings();
 		this.render();
+	}
+
+	private async setHierarchyStyle(style: HierarchyStyle): Promise<void> {
+		if (style === this.plugin.settings.hierarchyStyle) {
+			this.render();
+			return;
+		}
+		this.plugin.settings.hierarchyStyle = style;
+		await this.plugin.saveSettings();
+		this.plugin.refreshViews();
 	}
 
 	private registerLinkHandlers(): void {
@@ -120,6 +149,7 @@ export class HopLinkViewerView extends ItemView {
 
 		const hops = this.plugin.settings.hops;
 		const includeDirect = this.plugin.settings.includeDirectLinks;
+		const hierarchyStyle = this.plugin.settings.hierarchyStyle;
 
 		const hopSetting = container.createDiv({ cls: "hop-link-viewer-hop-setting" });
 		hopSetting.createSpan({ text: "Up to " });
@@ -144,6 +174,20 @@ export class HopLinkViewerView extends ItemView {
 			text: includeDirect ? "-hop link suggestions" : "-hop missing links",
 		});
 
+		const styleSetting = container.createDiv({ cls: "hop-link-viewer-style-setting" });
+		styleSetting.createSpan({ text: "Display" });
+		const styleSelect = styleSetting.createEl("select", {
+			cls: "hop-link-viewer-style-select",
+			attr: { "aria-label": "Display style" },
+		});
+		for (const style of HIERARCHY_STYLE_ORDER) {
+			styleSelect.createEl("option", {
+				text: HIERARCHY_STYLE_LABELS[style],
+				value: style,
+			});
+		}
+		styleSelect.value = hierarchyStyle;
+
 		const anchor = this.resolveLinkedAnchor() ?? resolveAnchor(
 			this.app,
 			this.plugin.settings,
@@ -154,7 +198,7 @@ export class HopLinkViewerView extends ItemView {
 		if (!anchor) {
 			container.createEl("p", {
 				cls: "hop-link-viewer-empty",
-				text: "No anchor note found.",
+				text: "No anchor found.",
 			});
 			return;
 		}
@@ -174,75 +218,208 @@ export class HopLinkViewerView extends ItemView {
 			text: ` · modified ${formatModifiedTime(anchor.stat.mtime)}`,
 		});
 
-		const suggestions = hopSuggestions(this.app, anchor.path, this.plugin.settings);
+		const walk = hopWalk(this.app, anchor.path, this.plugin.settings);
+		const { suggestions, nodes } = walk;
+		const visiblePaths = suggestions.map((item) => item.path);
 
-		if (suggestions.length > 0) {
-			const list = container.createEl("ul", { cls: "hop-link-viewer-list" });
-			for (const suggestion of suggestions) {
-				const item = list.createEl("li");
-				const file = this.app.vault.getAbstractFileByPath(suggestion.path);
-				const displayName = file instanceof TFile ? file.basename : suggestion.path;
-
-				if (suggestion.isDirectLink) {
-					item.createSpan({
-						cls: "hop-link-viewer-connected",
-						text: "linked",
-						attr: { title: "Already linked to anchor" },
-					});
-				}
-
-				const link = item.createEl("a", {
-					cls: "internal-link",
-					text: displayName,
-					href: suggestion.path,
-				});
-				link.dataset.href = suggestion.path;
-
-				if (!suggestion.isDirectLink) {
-					item.createSpan({
-						cls: "hop-link-viewer-hop-level",
-						text: String(suggestion.hop),
-						attr: { title: `${String(suggestion.hop)}-hop from anchor` },
-					});
-				}
-			}
-		} else {
+		if (suggestions.length === 0) {
 			container.createEl("p", {
 				cls: "hop-link-viewer-empty",
 				text: includeDirect
 					? `No ${String(hops)}-hop suggestions yet.`
 					: `No missing ${String(hops)}-hop network links predicted yet.`,
 			});
+			return;
 		}
+
+		if (hierarchyStyle === "chain") {
+			this.renderChain(container, nodes, visiblePaths);
+			return;
+		}
+
+		if (hierarchyStyle === "single") {
+			this.renderSingle(container, nodes, visiblePaths);
+			return;
+		}
+
+		this.renderList(
+			container,
+			suggestions.slice(0, this.plugin.settings.displayCap)
+		);
+	}
+
+	private renderList(
+		container: HTMLElement,
+		suggestions: { path: string; isDirectLink: boolean; hop: number }[]
+	): void {
+		const list = container.createEl("ul", { cls: "hop-link-viewer-list" });
+		for (const suggestion of suggestions) {
+			const item = list.createEl("li");
+			this.appendSuggestionRow(item, suggestion.path, suggestion.isDirectLink, suggestion.hop);
+		}
+	}
+
+	private renderChain(
+		container: HTMLElement,
+		nodes: Map<string, HopNode>,
+		visiblePaths: string[]
+	): void {
+		const shown = new Set(visiblePaths);
+		const roots = sortHopNodes(
+			this.app,
+			visiblePaths.flatMap((path) => {
+				const node = nodes.get(path);
+				if (!node) return [];
+				const hasShownParent = node.parents.some((parent) => shown.has(parent));
+				return hasShownParent ? [] : [node];
+			}),
+			this.plugin.settings
+		).slice(0, this.plugin.settings.displayCap);
+
+		if (roots.length === 0) return;
+
+		const list = container.createEl("ul", { cls: "hop-link-viewer-tree" });
+		const renderNode = (parentList: HTMLElement, node: HopNode, ancestors: Set<string>): void => {
+			if (ancestors.has(node.path) || !shown.has(node.path)) return;
+
+			const item = parentList.createEl("li");
+			this.appendSuggestionRow(item, node.path, node.isDirectLink, node.hop);
+
+			const nextAncestors = new Set(ancestors);
+			nextAncestors.add(node.path);
+			const childNodes = sortHopNodes(
+				this.app,
+				node.children.flatMap((childPath) => {
+					if (nextAncestors.has(childPath) || !shown.has(childPath)) return [];
+					const child = nodes.get(childPath);
+					return child ? [child] : [];
+				}),
+				this.plugin.settings
+			);
+			if (childNodes.length === 0) return;
+
+			const childList = item.createEl("ul", { cls: "hop-link-viewer-tree" });
+			for (const child of childNodes) {
+				renderNode(childList, child, nextAncestors);
+			}
+		};
+
+		for (const root of roots) {
+			renderNode(list, root, new Set());
+		}
+	}
+
+	private renderSingle(
+		container: HTMLElement,
+		nodes: Map<string, HopNode>,
+		visiblePaths: string[]
+	): void {
+		const visible = new Set(visiblePaths);
+		const nestedUnder = new Map<string, HopNode[]>();
+		const topLevel: HopNode[] = [];
+
+		for (const path of visiblePaths) {
+			const node = nodes.get(path);
+			if (!node) continue;
+			const primaryParent = node.parents[0];
+			if (primaryParent && visible.has(primaryParent)) {
+				const siblings = nestedUnder.get(primaryParent) ?? [];
+				siblings.push(node);
+				nestedUnder.set(primaryParent, siblings);
+			} else {
+				topLevel.push(node);
+			}
+		}
+
+		const list = container.createEl("ul", { cls: "hop-link-viewer-tree" });
+		const renderNode = (parentList: HTMLElement, node: HopNode): void => {
+			const item = parentList.createEl("li");
+			this.appendSuggestionRow(item, node.path, node.isDirectLink, node.hop);
+			this.appendParentList(item, node.parents);
+
+			const childNodes = sortHopNodes(
+				this.app,
+				nestedUnder.get(node.path) ?? [],
+				this.plugin.settings
+			);
+			if (childNodes.length === 0) return;
+
+			const childList = item.createEl("ul", { cls: "hop-link-viewer-tree" });
+			for (const child of childNodes) {
+				renderNode(childList, child);
+			}
+		};
+
+		for (const node of sortHopNodes(this.app, topLevel, this.plugin.settings).slice(
+			0,
+			this.plugin.settings.displayCap
+		)) {
+			renderNode(list, node);
+		}
+	}
+
+	private appendSuggestionRow(
+		item: HTMLElement,
+		path: string,
+		isDirectLink: boolean,
+		hop: number
+	): void {
+		const link = item.createEl("a", {
+			cls: "internal-link",
+			text: this.getDisplayName(path),
+			href: path,
+		});
+		link.dataset.href = path;
+
+		if (isDirectLink) {
+			item.createSpan({
+				cls: "hop-link-viewer-connected",
+				text: "linked",
+				attr: { title: "Already linked to anchor" },
+			});
+		} else {
+			item.createSpan({
+				cls: "hop-link-viewer-hop-level",
+				text: String(hop),
+				attr: { title: `${String(hop)}-hop from anchor` },
+			});
+		}
+	}
+
+	private appendParentList(item: HTMLElement, parents: string[]): void {
+		if (parents.length === 0) return;
+
+		const parentList = item.createEl("ul", { cls: "hop-link-viewer-parents-list" });
+		for (const parentPath of parents) {
+			const parentItem = parentList.createEl("li");
+			const link = parentItem.createEl("a", {
+				cls: "internal-link",
+				text: this.getDisplayName(parentPath),
+				href: parentPath,
+			});
+			link.dataset.href = parentPath;
+		}
+	}
+
+	private getDisplayName(path: string): string {
+		const file = this.app.vault.getAbstractFileByPath(path);
+		return file instanceof TFile ? file.basename : path;
 	}
 
 	private resolveLinkedAnchor(): TFile | null {
 		if (this.plugin.settings.anchorMode !== "active-file") return null;
 
 		const stateGroupMember = this.leaf.getViewState().group;
-		const stateGroupFile = this.getMarkdownFile(stateGroupMember);
+		const stateGroupFile = fileFromLeaf(this.app, stateGroupMember);
 		if (stateGroupFile) return stateGroupFile;
 
 		if (!this.linkedGroup) return null;
 		for (const leaf of this.app.workspace.getGroupLeaves(this.linkedGroup)) {
 			if (leaf === this.leaf) continue;
-			const file = this.getMarkdownFile(leaf);
+			const file = fileFromLeaf(this.app, leaf);
 			if (file) return file;
 		}
 
 		return null;
-	}
-
-	private getMarkdownFile(leaf: WorkspaceLeaf | undefined): TFile | null {
-		if (!leaf) return null;
-		if (leaf.view instanceof MarkdownView) {
-			const file = leaf.view.file;
-			if (file instanceof TFile && file.extension === "md") return file;
-		}
-
-		const filePath = leaf.getViewState().state?.file;
-		if (typeof filePath !== "string") return null;
-		const file = this.app.vault.getAbstractFileByPath(filePath);
-		return file instanceof TFile && file.extension === "md" ? file : null;
 	}
 }

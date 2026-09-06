@@ -1,21 +1,18 @@
-import { MarkdownView, TFile, type App, type WorkspaceLeaf } from "obsidian";
+import { FileView, TFile, type App, type WorkspaceLeaf } from "obsidian";
 import type { HopLinkViewerSettings } from "./constants";
-
-function isValidAnchorFile(file: TFile): boolean {
-	return file.extension === "md";
-}
+import { isValidHopFile } from "./graph";
 
 function resolveFilePath(app: App, path: string | null): TFile | null {
 	if (!path) return null;
 	const file = app.vault.getAbstractFileByPath(path);
-	return file instanceof TFile && isValidAnchorFile(file) ? file : null;
+	return file instanceof TFile && isValidHopFile(file) ? file : null;
 }
 
-function markdownFileFromLeaf(app: App, leaf: WorkspaceLeaf | null | undefined): TFile | null {
+export function fileFromLeaf(app: App, leaf: WorkspaceLeaf | null | undefined): TFile | null {
 	if (!leaf) return null;
-	if (leaf.view instanceof MarkdownView) {
+	if (leaf.view instanceof FileView) {
 		const file = leaf.view.file;
-		if (file instanceof TFile && isValidAnchorFile(file)) return file;
+		if (file instanceof TFile && isValidHopFile(file)) return file;
 	}
 
 	const filePath = leaf.getViewState().state?.file;
@@ -27,7 +24,7 @@ function resolveWindowActiveFile(app: App, viewerLeaf: WorkspaceLeaf): TFile | n
 	const container = viewerLeaf.getContainer();
 	const recent = app.workspace.getMostRecentLeaf(container);
 	if (recent && recent !== viewerLeaf) {
-		const file = markdownFileFromLeaf(app, recent);
+		const file = fileFromLeaf(app, recent);
 		if (file) return file;
 	}
 
@@ -35,7 +32,7 @@ function resolveWindowActiveFile(app: App, viewerLeaf: WorkspaceLeaf): TFile | n
 	app.workspace.iterateRootLeaves((leaf) => {
 		if (fallback || leaf === viewerLeaf) return;
 		if (leaf.getContainer().win !== container.win) return;
-		const file = markdownFileFromLeaf(app, leaf);
+		const file = fileFromLeaf(app, leaf);
 		if (file) fallback = file;
 	});
 	return fallback;
@@ -43,14 +40,14 @@ function resolveWindowActiveFile(app: App, viewerLeaf: WorkspaceLeaf): TFile | n
 
 export function resolveLastViewed(app: App): TFile | null {
 	const active = app.workspace.getActiveFile();
-	if (active && isValidAnchorFile(active)) {
+	if (active && isValidHopFile(active)) {
 		return active;
 	}
 
 	const recent = app.workspace.getLastOpenFiles();
 	for (const path of recent) {
 		const file = app.vault.getAbstractFileByPath(path);
-		if (file instanceof TFile && isValidAnchorFile(file)) {
+		if (file instanceof TFile && isValidHopFile(file)) {
 			return file;
 		}
 	}
@@ -68,7 +65,7 @@ export function resolveActiveFile(app: App, viewerLeaf?: WorkspaceLeaf): TFile |
 	}
 
 	const active = app.workspace.getActiveFile();
-	if (active && isValidAnchorFile(active)) {
+	if (active && isValidHopFile(active)) {
 		return active;
 	}
 	return null;

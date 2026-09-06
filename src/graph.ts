@@ -1,5 +1,11 @@
 import { normalizePath, TFile, type App } from "obsidian";
-import type { HopLinkViewerSettings, LinkSuggestion, SortOrder } from "./constants";
+import type {
+	HopLinkViewerSettings,
+	HopNode,
+	HopWalkResult,
+	LinkSuggestion,
+	SortOrder,
+} from "./constants";
 
 export function isExcludedPath(path: string, excludedPaths: string[]): boolean {
 	const normalizedPath = normalizePath(path);
@@ -18,6 +24,10 @@ export function isValidTargetFile(path: string): boolean {
 	const isMarkdown = lower.endsWith(".md") || hasNoExtension;
 	const isPDF = lower.endsWith(".pdf");
 	return isMarkdown || isPDF;
+}
+
+export function isValidHopFile(file: TFile): boolean {
+	return isValidTargetFile(file.path);
 }
 
 function passesPathFilters(path: string, anchorPath: string, settings: HopLinkViewerSettings): boolean {
@@ -122,31 +132,42 @@ function sortSuggestions(
 	}
 }
 
-export function hopSuggestions(
+function toSuggestion(node: HopNode): LinkSuggestion {
+	return {
+		path: node.path,
+		isDirectLink: node.isDirectLink,
+		hop: node.hop,
+	};
+}
+
+export function hopWalk(
 	app: App,
 	anchorPath: string,
 	settings: HopLinkViewerSettings
-): LinkSuggestion[] {
+): HopWalkResult {
 	const graph = buildGraph(app);
 	const getConnections = (path: string) => graph.getConnections(path);
 
+	const distance = new Map<string, number>([[anchorPath, 0]]);
+	const discoveryOrder: string[] = [];
 	const suggestions: LinkSuggestion[] = [];
-	const seen = new Set<string>([anchorPath]);
 	let currentLevel = new Set(getConnections(anchorPath));
 
 	for (let hop = 1; hop <= settings.hops; hop++) {
 		for (const path of currentLevel) {
-			if (seen.has(path)) continue;
+			if (distance.has(path)) continue;
+			distance.set(path, hop);
+
 			if (!passesPathFilters(path, anchorPath, settings)) continue;
 
-			seen.add(path);
-
+			discoveryOrder.push(path);
+			const isDirectLink = hop === 1;
 			if (hop === 1) {
 				if (settings.includeDirectLinks) {
-					suggestions.push({ path, isDirectLink: true, hop });
+					suggestions.push({ path, isDirectLink, hop });
 				}
 			} else {
-				suggestions.push({ path, isDirectLink: false, hop });
+				suggestions.push({ path, isDirectLink, hop });
 			}
 		}
 
@@ -161,8 +182,64 @@ export function hopSuggestions(
 		}
 	}
 
-	return sortSuggestions(app, suggestions, graph, settings.sortOrder).slice(
-		0,
-		settings.displayCap
+	const nodes = new Map<string, HopNode>();
+	for (const path of discoveryOrder) {
+		const hop = distance.get(path);
+		if (hop === undefined) continue;
+
+		const parents: string[] = [];
+		const children: string[] = [];
+		const neighborSet = new Set(getConnections(path));
+
+		for (const candidate of discoveryOrder) {
+			if (candidate === path || !neighborSet.has(candidate)) continue;
+			const candidateHop = distance.get(candidate);
+			if (candidateHop === hop - 1) {
+				parents.push(candidate);
+			} else if (candidateHop === hop + 1) {
+				children.push(candidate);
+			}
+		}
+
+		nodes.set(path, {
+			path,
+			hop,
+			isDirectLink: hop === 1,
+			parents,
+			children,
+		});
+	}
+
+	return {
+		suggestions: sortSuggestions(app, suggestions, graph, settings.sortOrder),
+		nodes,
+	};
+}
+
+export function sortHopNodes(
+	app: App,
+	nodes: HopNode[],
+	settings: HopLinkViewerSettings
+): HopNode[] {
+	if (nodes.length <= 1) return nodes;
+	const graph = buildGraph(app);
+	const sorted = sortSuggestions(
+		app,
+		nodes.map(toSuggestion),
+		graph,
+		settings.sortOrder
 	);
+	const byPath = new Map(nodes.map((node) => [node.path, node]));
+	return sorted.flatMap((suggestion) => {
+		const node = byPath.get(suggestion.path);
+		return node ? [node] : [];
+	});
+}
+
+export function hopSuggestions(
+	app: App,
+	anchorPath: string,
+	settings: HopLinkViewerSettings
+): LinkSuggestion[] {
+	return hopWalk(app, anchorPath, settings).suggestions;
 }
