@@ -4,6 +4,7 @@ import {
 	HIERARCHY_STYLE_LABELS,
 	HIERARCHY_STYLE_ORDER,
 	VIEW_TYPE_HOP_LINK_VIEWER,
+	includeDirectLinks,
 	isHierarchyStyle,
 	type HierarchyStyle,
 	type HopNode,
@@ -143,12 +144,20 @@ export class HopLinkViewerView extends ItemView {
 		});
 	}
 
+	hasFocusedControl(): boolean {
+		const active = this.contentEl.ownerDocument.activeElement;
+		if (!(active instanceof HTMLElement) || !this.contentEl.contains(active)) {
+			return false;
+		}
+		return active.matches(".hop-link-viewer-style-select, .hop-link-viewer-hop-input");
+	}
+
 	render(): void {
 		const container = this.contentEl;
 		container.empty();
 
 		const hops = this.plugin.settings.hops;
-		const includeDirect = this.plugin.settings.includeDirectLinks;
+		const includeDirect = includeDirectLinks(this.plugin.settings);
 		const hierarchyStyle = this.plugin.settings.hierarchyStyle;
 
 		const hopSetting = container.createDiv({ cls: "hop-link-viewer-hop-setting" });
@@ -237,11 +246,6 @@ export class HopLinkViewerView extends ItemView {
 			return;
 		}
 
-		if (hierarchyStyle === "single") {
-			this.renderSingle(container, nodes, visiblePaths);
-			return;
-		}
-
 		this.renderList(
 			container,
 			suggestions.slice(0, this.plugin.settings.displayCap)
@@ -309,55 +313,6 @@ export class HopLinkViewerView extends ItemView {
 		}
 	}
 
-	private renderSingle(
-		container: HTMLElement,
-		nodes: Map<string, HopNode>,
-		visiblePaths: string[]
-	): void {
-		const visible = new Set(visiblePaths);
-		const nestedUnder = new Map<string, HopNode[]>();
-		const topLevel: HopNode[] = [];
-
-		for (const path of visiblePaths) {
-			const node = nodes.get(path);
-			if (!node) continue;
-			const primaryParent = node.parents[0];
-			if (primaryParent && visible.has(primaryParent)) {
-				const siblings = nestedUnder.get(primaryParent) ?? [];
-				siblings.push(node);
-				nestedUnder.set(primaryParent, siblings);
-			} else {
-				topLevel.push(node);
-			}
-		}
-
-		const list = container.createEl("ul", { cls: "hop-link-viewer-tree" });
-		const renderNode = (parentList: HTMLElement, node: HopNode): void => {
-			const item = parentList.createEl("li");
-			this.appendSuggestionRow(item, node.path, node.isDirectLink, node.hop);
-			this.appendParentList(item, node.parents);
-
-			const childNodes = sortHopNodes(
-				this.app,
-				nestedUnder.get(node.path) ?? [],
-				this.plugin.settings
-			);
-			if (childNodes.length === 0) return;
-
-			const childList = item.createEl("ul", { cls: "hop-link-viewer-tree" });
-			for (const child of childNodes) {
-				renderNode(childList, child);
-			}
-		};
-
-		for (const node of sortHopNodes(this.app, topLevel, this.plugin.settings).slice(
-			0,
-			this.plugin.settings.displayCap
-		)) {
-			renderNode(list, node);
-		}
-	}
-
 	private appendSuggestionRow(
 		item: HTMLElement,
 		path: string,
@@ -383,21 +338,6 @@ export class HopLinkViewerView extends ItemView {
 				text: String(hop),
 				attr: { title: `${String(hop)}-hop from anchor` },
 			});
-		}
-	}
-
-	private appendParentList(item: HTMLElement, parents: string[]): void {
-		if (parents.length === 0) return;
-
-		const parentList = item.createEl("ul", { cls: "hop-link-viewer-parents-list" });
-		for (const parentPath of parents) {
-			const parentItem = parentList.createEl("li");
-			const link = parentItem.createEl("a", {
-				cls: "internal-link",
-				text: this.getDisplayName(parentPath),
-				href: parentPath,
-			});
-			link.dataset.href = parentPath;
 		}
 	}
 

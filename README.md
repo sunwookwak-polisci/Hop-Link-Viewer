@@ -1,36 +1,99 @@
 # Hop-Link Viewer — Obsidian Plugin
 
-Suggest notes **up to N hops** from an anchor note, skipping notes already linked to it by default. Built for serendipitous discovery of missing links in your vault.
+**Hop-Link Viewer** surfaces unlinked notes across your vault that are reachable through your existing connections. While Obsidian’s local graph view looks visually impressive, it can quickly become cluttered and unintuitive to refer to when writing your notes. **Hop-Link Viewer** provides a clean, text-first alternative. It shows notes that aren't yet linked to your current note, but are linked to notes that already are.
+
+> **What’s new in 1.2.0.**
+>
+> You can now see the hop walk as a nested **Chain**, or keep the unique-note **List**. Direct links stay off in List and on in Chain so the path is visible. A PDF opened as its own tab can be the anchor. In a pop-out window, **Open viewer in sidebar** splits to the right of the note. [Full release notes](https://github.com/sunwookwak-polisci/Hop-Link-Viewer/releases/tag/1.2.0).
 
 ## What it does
 
-Hop-Link Viewer walks your vault’s link graph outward from an **anchor** and lists nearby notes that are **not yet connected** to it. It opens in the right sidebar by default, with commands for opening it below or beside the active note.
+Hop-Link Viewer starts from the note you are writing—the **anchor**—and walks outward through the links already in your vault. It lists nearby notes that are **not yet connected** to that anchor, but are connected to notes that already are.
 
-A link counts in either direction: notes the anchor points to, and notes that point back. By default the sidebar skips those already-connected notes, so you see **missing** links instead of the same neighbors Obsidian already shows.
+A connection counts in either direction, treating backlinks and outlinks the same. In **List view**, already-linked neighbors (1-hop) stay hidden by default, so you see **missing** links instead of repeating what backlinks and outlinks already show. In **Chain view**, those neighbors are shown by default so you can see the path. Each suggestion is a clickable title with a hop number (2, 3, …) on the right, or a **linked** badge for a direct neighbor.
 
 ### Example
 
-Anchor: **Project Alpha**, which links to **Jane Smith** and **Budget 2024**.
+You are writing **Legislative Gatekeeping**, which already links to **Party Cartel Theory** and the **Korean National Assembly**.
 
-| Distance | Meaning | Shown by default? |
-|----------|---------|-------------------|
-| **1-hop** | Direct neighbors — Jane, Budget (either direction) | No |
-| **2-hop** | Linked from Jane or Budget, but not from Project Alpha — e.g. **Conference talk**, **Prior grant** | Yes |
-| **3-hop** | One step further — e.g. a paper cited on Conference talk | Yes, up to your hop depth |
+| Distance | Meaning | In List View | In Chain View |
+|----------|---------|------|-------|
+| **1-hop** | Direct neighbors — Party Cartel Theory, Korean National Assembly | Hidden | Shown (`linked`) |
+| **2-hop** | Linked from those neighbors, but not from Legislative Gatekeeping — e.g. **Cox and McCubbins**, **Bill Review Subcommittees** | Shown | Shown |
+| **3-hop** | One step further — e.g. **Meeting Frequency**, **Negotiated Procedural Control** | Shown | Shown |
 
-Each suggestion is a clickable link with a hop number (2, 3, …) to the right. Turn on **Include direct links** to also list 1-hop neighbors; those show a **linked** badge to the right of the name instead of a hop number.
+Those 2-hop and 3-hop notes are the missing links. They sit near the note you are writing, but you have not linked them to it yet. (You can raise hop depth to look farther—4, 5, 6 hops, and so on.)
 
-### Viewer
+**List view** shows each of those notes once, with its hop number:
 
-Open it in the sidebar from the ribbon (**Open Hop-Link Viewer**) or the command palette (**Hop-Link Viewer: Open viewer in sidebar**). Each Obsidian window can have its own sidebar viewer and workspace pane viewer. In a pop-out window that has no sidebar, **Open viewer in sidebar** splits the viewer to the right of the active note.
+- Cox and McCubbins — 2
+- Negative Agenda Control — 2
+- Bill Review Subcommittees — 2
+- Proportional Chair Allocation — 2
+- Electoral Cycles — 3
+- Meeting Frequency — 3
+- Negotiated Procedural Control — 3
 
-Use **Open viewer below active note** or **Open viewer to right of active note** to open the plugin in a workspace pane in the current window. When that pane is linked to a markdown or PDF tab with Obsidian’s **Link with tab**, its active-file anchor follows the linked tab. Unlinked viewers follow the active markdown or PDF file in the same window.
+![List view of Hop-Link Viewer from Legislative Gatekeeping](images/example-list.png)
 
-The viewer shows a hop-depth stepper (synced with Settings), a **Display** style control, the current anchor and its last-modified time, and suggestions up to your display cap. **List** keeps that many unique notes. **Chain** and **Single** keep that many first-level items and nest the rest without a further cap. Use **Hop-Link Viewer: Cycle display style** or the in-viewer control to switch between the unique-note **List**, **Chain** walks that can repeat notes along each path, and **Single**, which shows each note once with extra parent links nested below.
+**Chain view** nests the same walk so you can see the path. Direct neighbors are included by default and become the roots:
 
-Click or tap a suggestion to open it. On desktop, Ctrl/Cmd-click or middle-click opens a new tab. The list refreshes when you switch notes, open files, edit, or when link metadata updates. No query language or templates.
+- Party Cartel Theory
+  - Cox and McCubbins
+  - Negative Agenda Control
+    - Electoral Cycles
+- Korean National Assembly
+  - Bill Review Subcommittees
+    - Meeting Frequency
+  - Proportional Chair Allocation
+    - Negotiated Procedural Control
 
-Typical uses: spotting related notes while writing, finding “obvious in hindsight” links between clusters, or raising hop depth / shuffling sort order to wander nearby ideas.
+![Chain view of Hop-Link Viewer from Legislative Gatekeeping](images/example-chain.png)
+
+## How to use
+
+Open the viewer from the ribbon (**Open Hop-Link Viewer**) or the command palette (**Hop-Link Viewer: Open viewer in sidebar**). It follows your active note, walking through backlinks and outlinks.
+
+Click or tap a suggestion to open it. On desktop, Ctrl/Cmd-click or middle-click opens a new tab. Use the hop-depth stepper at the top of the viewer to look nearer or farther. The list refreshes when you switch notes, edit links, or change hop depth. Suggestions are markdown notes and PDFs; images, canvases, and other attachments are skipped even if they are linked.
+
+To keep the list beside your writing, use **Open viewer below active note** or **Open viewer to right of active note**. You can **Link with tab** so that pane follows a specific note; otherwise it follows the active file in the same window.
+
+**List** (the default) shows each nearby note once and hides direct links. **Chain** nests suggestions along the paths that reached them, including direct links so you can see *how* a note sits next to the one you are writing. Switch styles from the **Display** control in the viewer or with **Hop-Link Viewer: Cycle display style**. Each style has its own **Include direct links** toggle.
+
+> Typical uses: spotting a related note while drafting, finding the “obvious in hindsight” link between two clusters, or raising hop depth to wander a little farther.
+
+### Options
+
+These settings live under **Settings → Hop-Link Viewer**, grouped to match the settings tab. The hop-depth stepper and Display control in the viewer change the same values.
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| **Display style** | List | **List** shows each nearby note once. **Chain** shows nested walks and may repeat a note that sits on more than one path. |
+| **Hop depth** | `3` | How far to walk from the current note. Hop 1 appears only when that style includes direct links. |
+| **Display cap** | `15` | How many notes List shows, or how many top-level rows Chain shows. Nested Chain rows are not capped. |
+| **List order** | Walk order | Sort before the cap is applied. Walk order follows discovery; you can also sort by modified time, link count, title, or shuffle. |
+| **Anchor mode** | Active file | Which file is “you are here”: the active markdown or PDF, the last file you edited, or the last one you viewed. |
+
+**Direct links**
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| **List** | off | Also list notes already connected to the anchor. Those rows show a **linked** badge. |
+| **Chain** | on | Also list notes already connected to the anchor, in Chain. On by default so the walk can start from notes you already linked. |
+
+**Folders**
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| **Excluded folder paths** | _(empty)_ | Hide those folders from the list. Notes there can still be the anchor, and the walk can still pass through them. |
+
+**Startup**
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| **Auto-open sidebar on startup** | off | Open the viewer when Obsidian starts. |
+
+The anchor can be a markdown note or a PDF opened as its own tab. If none can be resolved, the viewer shows “No anchor found.”
 
 ## Install
 
@@ -39,60 +102,6 @@ Requires Obsidian 1.13.0 or newer.
 1. Open **Settings → Community plugins**.
 2. Turn off **Restricted mode** if it is on.
 3. Click **Browse**, search for **Hop-Link Viewer**, then install and enable it.
-
-
-## Settings
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| **Hop depth** | `3` | How far to walk from the anchor. Hop 1 appears only with **Include direct links**. |
-| **Display cap** | `15` | **List:** unique notes after sorting. **Chain / Single:** first-level items only; nested descendants are not capped. |
-| **Excluded folder paths** | _(empty)_ | One prefix per line. Hidden from the list only; those notes can still be the anchor, and the walk can still pass through them. |
-| **Anchor mode** | `active-file` | Which file is “you are here” |
-| **List order** | `walk-order` | Sort before applying the display cap |
-| **Display style** | `list` | Unique-note list, Chain, or Single |
-| **Include direct links** | off | Show 1-hop neighbors with a `linked` badge |
-| **Auto-open sidebar on startup** | off | Open the viewer in the sidebar when Obsidian starts |
-
-### Anchor mode
-
-The **anchor** can be a markdown note or a PDF. If none can be resolved, the viewer shows “No anchor found.” Images, canvases, and other file types are not anchors yet. A PDF used only as an embed inside a note is not an anchor until it is opened as its own tab.
-
-| Mode | Behavior |
-|------|----------|
-| `active-file` | Linked markdown or PDF tab for a linked workspace viewer; otherwise, the active markdown or PDF file in the same window |
-| `last-edited` | Most recently modified markdown or PDF file tracked while the plugin was enabled; before the first tracked edit, same fallback as `last-viewed` |
-| `last-viewed` | Active markdown or PDF file if there is one; otherwise the first markdown or PDF file in recently opened files |
-
-### List order
-
-| Option | Behavior |
-|--------|----------|
-| `walk-order` | Breadth-first discovery order (default) |
-| `mtime-desc` | Most recently modified first |
-| `mtime-asc` | Oldest modified first |
-| `link-count-desc` | Most vault links first |
-| `alphabetical` | Title A–Z |
-| `random` | Shuffled on each refresh |
-
-### Display style
-
-The **display cap** applies to unique notes in **List**, and to first-level items only in **Chain** and **Single**. Nested descendants are not capped (they are still limited by hop depth and filters). Children of first-level items omitted by the cap are not promoted into the first level. Chain can show more rows than the cap because the same note may appear on more than one path.
-
-| Style | Behavior |
-|-------|----------|
-| `list` | Flat unique-note list (default). Unchanged from earlier versions, capped to unique notes. |
-| `chain` | Nested walks from shown nodes that have no parent also in the suggestion set. Notes can repeat on different branches (`A → C → D` and `B → C → D` when direct links are included). When **Include direct links** is off, 1-hop neighbors are hidden and the next shown hop becomes the root (`C → D`). |
-| `single` | Each note appears once, nested under its first previous-hop parent that is also shown. Extra parent notes are listed under the note without a “parents” label, and are not a second subtree. If that primary parent is not shown, the note is promoted to the top level. |
-
-**Hop-Link Viewer: Cycle display style** walks List → Chain → Single → List and saves the same setting.
-
-## How it works
-
-1. Resolve the anchor from the selected mode (markdown or PDF).
-2. Walk an undirected graph of **resolved** inlinks and outlinks (broken or unresolved links are ignored), up to N hops.
-3. Keep markdown notes and PDFs as suggestions. Images, canvases, and other attachments are skipped even if they are linked.
-4. Sort the full candidate set. **List** then keeps the display-cap unique notes. **Chain** and **Single** nest the full sorted set, then keep only display-cap first-level items; nested descendants are not capped. There is no other ranking.
 
 ## License
 

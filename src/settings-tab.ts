@@ -20,8 +20,20 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 	getSettingDefinitions(): SettingDefinitionItem<SettingKey>[] {
 		return [
 			{
+				name: "Display style",
+				desc: "How to show suggestions: a unique-note list, or Chain walks that can repeat notes on each path.",
+				control: {
+					type: "dropdown",
+					key: "hierarchyStyle",
+					options: {
+						list: "List (unique notes)",
+						chain: "Chain (all paths)",
+					},
+				},
+			},
+			{
 				name: "Hop depth",
-				desc: "Maximum hop distance from the anchor. Shows non-direct notes from hop 2 up to this depth; hop 1 appears only when direct links are included.",
+				desc: "How far to walk from the current note. Hop 1 appears only when that style includes direct links.",
 				control: {
 					type: "number",
 					key: "hops",
@@ -36,7 +48,7 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 			},
 			{
 				name: "Display cap",
-				desc: "For List, maximum unique notes. For Chain and Single, maximum first-level items; nested descendants are not capped (still limited by hop depth and filters).",
+				desc: "For List, maximum unique notes. For Chain, maximum first-level items; nested descendants are not capped (still limited by hop depth and filters).",
 				control: {
 					type: "number",
 					key: "displayCap",
@@ -47,29 +59,6 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 						Number.isInteger(value) && value >= 1
 							? undefined
 							: "Display cap must be a whole number of 1 or more.",
-				},
-			},
-			{
-				name: "Excluded folder paths",
-				desc: "One folder prefix per line. Notes under these paths are excluded from suggestions (not from anchor selection).",
-				control: {
-					type: "textarea",
-					key: "excludedPaths",
-					placeholder: "Daily Notes/\nTemplates/",
-					rows: 4,
-				},
-			},
-			{
-				name: "Anchor mode",
-				desc: "How the viewer chooses the anchor for suggestions.",
-				control: {
-					type: "dropdown",
-					key: "anchorMode",
-					options: {
-						"active-file": "Active file (focused pane)",
-						"last-edited": "Last edited (tracked by this plugin)",
-						"last-viewed": "Last viewed (active or recently opened)",
-					},
 				},
 			},
 			{
@@ -89,33 +78,69 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 				},
 			},
 			{
-				name: "Display style",
-				desc: "How to show suggestions: a unique-note list, Chain walks that can repeat notes on each path, or Single (each note once, with extra parent links nested below).",
+				name: "Anchor mode",
+				desc: "How the viewer chooses the current note.",
 				control: {
 					type: "dropdown",
-					key: "hierarchyStyle",
+					key: "anchorMode",
 					options: {
-						list: "List (unique notes)",
-						chain: "Chain (all paths)",
-						single: "Single (each note once)",
+						"active-file": "Active file (focused pane)",
+						"last-edited": "Last edited (tracked by this plugin)",
+						"last-viewed": "Last viewed (active or recently opened)",
 					},
 				},
 			},
 			{
-				name: "Include direct links",
-				desc: "Also show notes already linked to the anchor. Direct links are marked with a “linked” badge.",
-				control: {
-					type: "toggle",
-					key: "includeDirectLinks",
-				},
+				type: "group",
+				heading: "Direct links",
+				items: [
+					{
+						name: "List",
+						desc: "Also show notes already linked to the anchor. Those rows use a “linked” badge. Off by default.",
+						control: {
+							type: "toggle",
+							key: "includeDirectLinksList",
+						},
+					},
+					{
+						name: "Chain",
+						desc: "Also show notes already linked to the anchor. Those rows use a “linked” badge. On by default.",
+						control: {
+							type: "toggle",
+							key: "includeDirectLinksChain",
+						},
+					},
+				],
 			},
 			{
-				name: "Auto-open sidebar on startup",
-				desc: "Open the viewer in the sidebar when Obsidian starts.",
-				control: {
-					type: "toggle",
-					key: "autoOpenSidebar",
-				},
+				type: "group",
+				heading: "Folders",
+				items: [
+					{
+						name: "Excluded folder paths",
+						desc: "One folder prefix per line. Notes under these paths are hidden from suggestions. They can still be the anchor, and the walk can still pass through them.",
+						control: {
+							type: "textarea",
+							key: "excludedPaths",
+							placeholder: "Daily Notes/\nTemplates/",
+							rows: 4,
+						},
+					},
+				],
+			},
+			{
+				type: "group",
+				heading: "Startup",
+				items: [
+					{
+						name: "Auto-open sidebar on startup",
+						desc: "Open the viewer in the sidebar when Obsidian starts.",
+						control: {
+							type: "toggle",
+							key: "autoOpenSidebar",
+						},
+					},
+				],
 			},
 		];
 	}
@@ -127,7 +152,8 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 			case "anchorMode":
 			case "sortOrder":
 			case "hierarchyStyle":
-			case "includeDirectLinks":
+			case "includeDirectLinksList":
+			case "includeDirectLinksChain":
 			case "autoOpenSidebar":
 				return this.plugin.settings[key];
 			case "excludedPaths":
@@ -176,12 +202,13 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 				this.plugin.settings.sortOrder = value;
 				break;
 			case "hierarchyStyle":
-				if (value !== "list" && value !== "chain" && value !== "single") {
+				if (value !== "list" && value !== "chain") {
 					return;
 				}
 				this.plugin.settings.hierarchyStyle = value;
 				break;
-			case "includeDirectLinks":
+			case "includeDirectLinksList":
+			case "includeDirectLinksChain":
 			case "autoOpenSidebar":
 				if (typeof value !== "boolean") return;
 				this.plugin.settings[key] = value;

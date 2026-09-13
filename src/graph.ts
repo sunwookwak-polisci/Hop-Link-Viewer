@@ -1,10 +1,11 @@
 import { normalizePath, TFile, type App } from "obsidian";
-import type {
-	HopLinkViewerSettings,
-	HopNode,
-	HopWalkResult,
-	LinkSuggestion,
-	SortOrder,
+import {
+	includeDirectLinks,
+	type HopLinkViewerSettings,
+	type HopNode,
+	type HopWalkResult,
+	type LinkSuggestion,
+	type SortOrder,
 } from "./constants";
 
 export function isExcludedPath(path: string, excludedPaths: string[]): boolean {
@@ -163,7 +164,7 @@ export function hopWalk(
 			discoveryOrder.push(path);
 			const isDirectLink = hop === 1;
 			if (hop === 1) {
-				if (settings.includeDirectLinks) {
+				if (includeDirectLinks(settings)) {
 					suggestions.push({ path, isDirectLink, hop });
 				}
 			} else {

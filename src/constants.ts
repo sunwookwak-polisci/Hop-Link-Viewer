@@ -6,7 +6,8 @@ export const DEFAULT_SETTINGS = {
 	excludedPaths: [],
 	anchorMode: "active-file" as AnchorMode,
 	sortOrder: "walk-order" as SortOrder,
-	includeDirectLinks: false,
+	includeDirectLinksList: false,
+	includeDirectLinksChain: true,
 	autoOpenSidebar: false,
 	hierarchyStyle: "list" as HierarchyStyle,
 };
@@ -23,25 +24,31 @@ export type SortOrder =
 	| "alphabetical"
 	| "random";
 
-export type HierarchyStyle = "list" | "chain" | "single";
+export type HierarchyStyle = "list" | "chain";
 
-export const HIERARCHY_STYLE_ORDER: HierarchyStyle[] = ["list", "chain", "single"];
+export const HIERARCHY_STYLE_ORDER: HierarchyStyle[] = ["list", "chain"];
 
 export const HIERARCHY_STYLE_LABELS: Record<HierarchyStyle, string> = {
 	list: "List",
 	chain: "Chain",
-	single: "Single",
 };
 
 export function parseHierarchyStyle(value: unknown): HierarchyStyle | null {
-	if (value === "list" || value === "chain" || value === "single") return value;
-	if (value === "track-up" || value === "path-tree") return "chain";
-	if (value === "parents" || value === "dag") return "single";
+	if (value === "list" || value === "chain") return value;
+	if (
+		value === "track-up" ||
+		value === "path-tree" ||
+		value === "single" ||
+		value === "parents" ||
+		value === "dag"
+	) {
+		return "chain";
+	}
 	return null;
 }
 
 export function isHierarchyStyle(value: unknown): value is HierarchyStyle {
-	return value === "list" || value === "chain" || value === "single";
+	return value === "list" || value === "chain";
 }
 
 export function nextHierarchyStyle(current: HierarchyStyle): HierarchyStyle {
@@ -56,9 +63,16 @@ export interface HopLinkViewerSettings {
 	excludedPaths: string[];
 	anchorMode: AnchorMode;
 	sortOrder: SortOrder;
-	includeDirectLinks: boolean;
+	includeDirectLinksList: boolean;
+	includeDirectLinksChain: boolean;
 	autoOpenSidebar: boolean;
 	hierarchyStyle: HierarchyStyle;
+}
+
+export function includeDirectLinks(settings: HopLinkViewerSettings): boolean {
+	return settings.hierarchyStyle === "chain"
+		? settings.includeDirectLinksChain
+		: settings.includeDirectLinksList;
 }
 
 export interface HopNode {

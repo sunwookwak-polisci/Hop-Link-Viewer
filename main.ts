@@ -68,8 +68,15 @@ function parseSettings(value: unknown): HopLinkViewerSettings {
 	) {
 		settings.sortOrder = value.sortOrder;
 	}
-	if (typeof value.includeDirectLinks === "boolean") {
-		settings.includeDirectLinks = value.includeDirectLinks;
+	if (typeof value.includeDirectLinksList === "boolean") {
+		settings.includeDirectLinksList = value.includeDirectLinksList;
+	} else if (typeof value.includeDirectLinks === "boolean") {
+		settings.includeDirectLinksList = value.includeDirectLinks;
+	}
+	if (typeof value.includeDirectLinksChain === "boolean") {
+		settings.includeDirectLinksChain = value.includeDirectLinksChain;
+	} else if (value.includeDirectLinks === true) {
+		settings.includeDirectLinksChain = true;
 	}
 	if (typeof value.autoOpenSidebar === "boolean") {
 		settings.autoOpenSidebar = value.autoOpenSidebar;
@@ -138,7 +145,9 @@ export default class HopLinkViewerPlugin extends Plugin {
 		this.addSettingTab(new HopLinkViewerSettingTab(this.app, this));
 
 		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", () => {
+			this.app.workspace.on("active-leaf-change", (leaf) => {
+				// Rebuilding on focus destroys an open Display <select> (first click).
+				if (leaf?.view instanceof HopLinkViewerView) return;
 				this.scheduleRefresh();
 			})
 		);
@@ -238,6 +247,10 @@ export default class HopLinkViewerPlugin extends Plugin {
 		}
 		this.refreshTimeout = window.setTimeout(() => {
 			this.refreshTimeout = null;
+			if (this.viewerHasFocusedControl()) {
+				this.scheduleRefresh();
+				return;
+			}
 			this.refreshViews();
 		}, 200);
 	}
@@ -249,6 +262,15 @@ export default class HopLinkViewerPlugin extends Plugin {
 				view.render();
 			}
 		});
+	}
+
+	private viewerHasFocusedControl(): boolean {
+		return this.app.workspace
+			.getLeavesOfType(VIEW_TYPE_HOP_LINK_VIEWER)
+			.some((leaf) => {
+				const view = leaf.view;
+				return view instanceof HopLinkViewerView && view.hasFocusedControl();
+			});
 	}
 
 	async activateView(location: ViewerLocation = "sidebar"): Promise<void> {
