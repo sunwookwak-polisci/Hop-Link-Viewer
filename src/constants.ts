@@ -3,6 +3,7 @@ export const VIEW_TYPE_HOP_LINK_VIEWER = "hop-link-viewer-view";
 export const DEFAULT_SETTINGS = {
 	hops: 3,
 	displayCap: 15,
+	nestedDisplayCap: 5,
 	excludedPaths: [],
 	anchorMode: "active-file" as AnchorMode,
 	sortOrder: "walk-order" as SortOrder,
@@ -60,6 +61,7 @@ export function nextHierarchyStyle(current: HierarchyStyle): HierarchyStyle {
 export interface HopLinkViewerSettings {
 	hops: number;
 	displayCap: number;
+	nestedDisplayCap: number;
 	excludedPaths: string[];
 	anchorMode: AnchorMode;
 	sortOrder: SortOrder;

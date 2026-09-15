@@ -48,7 +48,7 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 			},
 			{
 				name: "Display cap",
-				desc: "For List, maximum unique notes. For Chain, maximum first-level items; nested descendants are not capped (still limited by hop depth and filters).",
+				desc: "For List, maximum unique notes. For Chain, maximum first-level items.",
 				control: {
 					type: "number",
 					key: "displayCap",
@@ -62,8 +62,23 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 				},
 			},
 			{
+				name: "Nested list cap",
+				desc: "For Chain only, maximum items in each nested list (second level and deeper). List is unchanged.",
+				control: {
+					type: "number",
+					key: "nestedDisplayCap",
+					placeholder: "5",
+					min: 1,
+					step: 1,
+					validate: (value) =>
+						Number.isInteger(value) && value >= 1
+							? undefined
+							: "Nested list cap must be a whole number of 1 or more.",
+				},
+			},
+			{
 				name: "List order",
-				desc: "How to sort suggestions before applying the display cap.",
+				desc: "How to sort suggestions before applying the display cap and nested list cap.",
 				control: {
 					type: "dropdown",
 					key: "sortOrder",
@@ -149,6 +164,7 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 		switch (key) {
 			case "hops":
 			case "displayCap":
+			case "nestedDisplayCap":
 			case "anchorMode":
 			case "sortOrder":
 			case "hierarchyStyle":
@@ -167,6 +183,7 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 		switch (key) {
 			case "hops":
 			case "displayCap":
+			case "nestedDisplayCap":
 				if (typeof value !== "number" || !Number.isInteger(value) || value < 1) return;
 				this.plugin.settings[key] = value;
 				break;

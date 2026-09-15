@@ -46,6 +46,13 @@ function parseSettings(value: unknown): HopLinkViewerSettings {
 	) {
 		settings.displayCap = value.displayCap;
 	}
+	if (
+		typeof value.nestedDisplayCap === "number" &&
+		Number.isInteger(value.nestedDisplayCap) &&
+		value.nestedDisplayCap >= 1
+	) {
+		settings.nestedDisplayCap = value.nestedDisplayCap;
+	}
 	if (Array.isArray(value.excludedPaths)) {
 		settings.excludedPaths = value.excludedPaths.filter(
 			(path): path is string => typeof path === "string"
