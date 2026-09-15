@@ -51,12 +51,12 @@ ROADMAP*.md
 .antigravity/
 .internal/
 
-# Local coordination docs (entire tree is private in this repo)
+# Local-only docs tree (deprecated leftovers may still exist here)
 /docs/
 docs/
 **/docs/internal/
 
-# Common accidental copies / editor leftovers of internal files
+# Accidental copies of deprecated or internal files
 *task-handoff*
 *cross-agent-workflow*
 *GrokBot*
