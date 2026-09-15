@@ -299,7 +299,7 @@ export class HopLinkViewerView extends ItemView {
 					return child ? [child] : [];
 				}),
 				this.plugin.settings
-			);
+			).slice(0, this.plugin.settings.nestedDisplayCap);
 			if (childNodes.length === 0) return;
 
 			const childList = item.createEl("ul", { cls: "hop-link-viewer-tree" });
