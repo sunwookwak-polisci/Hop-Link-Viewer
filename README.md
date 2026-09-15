@@ -72,7 +72,7 @@ These settings live under **Settings → Hop-Link Viewer**, grouped to match the
 | **Hop depth** | `3` | How far to walk from the current note. Hop 1 appears only when that style includes direct links. |
 | **Display cap** | `15` | How many notes List shows, or how many top-level rows Chain shows. |
 | **Nested list cap** | `5` | For Chain only, how many items each nested list (second level and deeper) shows. List is unchanged. |
-| **List order** | Walk order | Sort before the display cap and nested list cap are applied. Walk order follows discovery; you can also sort by modified time, link count, title, or shuffle. |
+| **List order** | Walk order | Sort before the display cap and nested list cap are applied. In Chain, the same order is used for first-level rows and each nested list. Walk order follows discovery; you can also sort by modified time, link count, title, or shuffle. |
 | **Anchor mode** | Active file | Which file is “you are here”: the active markdown or PDF, the last file you edited, or the last one you viewed. |
 
 **Direct links**

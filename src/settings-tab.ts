@@ -78,7 +78,7 @@ export class HopLinkViewerSettingTab extends PluginSettingTab {
 			},
 			{
 				name: "List order",
-				desc: "How to sort suggestions before applying the display cap and nested list cap.",
+				desc: "How to sort suggestions before applying the display cap and nested list cap. In Chain, the same order is used for first-level rows and each nested list.",
 				control: {
 					type: "dropdown",
 					key: "sortOrder",
